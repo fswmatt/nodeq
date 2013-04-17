@@ -3,13 +3,10 @@
  */
 
 var express = require('express')
-	, routes = require('./routes')
-	, user = require('./routes/user')
 	, api = require('./routes/api')
+	, test = require('./routes/test')
 	, http = require('http')
 	, path = require('path');
-
-
 var app = express();
 
 // all environments
@@ -28,12 +25,13 @@ if ('development' == app.get('env')) {
   app.use(express.errorHandler());
 }
 
-app.get('/', routes.index);
-app.get('/users', user.list);
+app.get('/', function(req, res) {
+	res.sendfile("./public/html/location.html");
+});
 app.get('/api/v0.1/getShowList/:zip/:miles', api.showListFromZipDist);
 app.get('/api/v0.1/getShowList/:top/:left/:bottom/:right', api.showListFromLatLng);
 app.get('/api/v0.1/getVenueInfo/:venueId', api.getVenueInfo);
-app.get('/api/v0.1/getShowInfo/:showId', api.getShowInfo);
+app.get('/test', test.test);
 
 http.createServer(app).listen(app.get('port'), function(){
   console.log('Express server listening on port ' + app.get('port'));

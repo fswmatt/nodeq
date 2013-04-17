@@ -9,62 +9,69 @@ var express = require('express')
 	, mongo = require('mongodb')
 	, events = require('events')
 	, util = util = require('util')
-	, keys = require('./keys')
+	, keys = require('../scripts/keys')
+	, mathHelper = require('../scripts/mathHelper')
+	, returnJsonHelper = require('../scripts/returnJsonHelper')
 	, app = express();
 
 
 // event management section
-//  we send one event (showCompletion) when we're done getting all the show info
+
+// we do this in chunks:
+//	1 - jambase (loads jb venues and shows into model)
+//	2 - load model with pollstar data, loads pollstar venues
+//	3 - load pollstar shows
+//	4 - merge shows and respond
+//
+// each chunk has to finish in order so we don't overwrite each other
+//
+// TODO: I really want to figure out a way to better wire these together...
+//
+// TODO: break this file into more manageable chunks, prob around those ops
+
+var JAMBASE_COMPLETION = 'jambaseCompletion';
+var POLLSTAR_VENUE_COMPLETION = 'pollstarVenueCompletion';
+var POLLSTAR_SHOW_COMPLETION = 'pollstarShowCompletion';
 
 // Sends events
 EventSender = function() {
 	events.EventEmitter.call(this);
-	this.sendShowCompletion = function(model) {
-		this.emit('showCompletion', model);
+	this.sendJambaseCompletion = function(model) {
+		this.emit(JAMBASE_COMPLETION, model);
+	}
+
+	this.sendPollstarVenueCompletion = function(model) {
+		this.emit(POLLSTAR_VENUE_COMPLETION, model);
+	}
+
+	this.sendPollstarShowCompletion = function(model) {
+		this.emit(POLLSTAR_SHOW_COMPLETION, model);
 	}
 };
 util.inherits(EventSender, events.EventEmitter);
 
 
-// we're done!  write it out.
-//  well, we're going to create our mini-object and just send the json
+// calls for after a completion event
 CompletionHandler = function() {
-	this.showHandler = function(model) {
-		// done!  write it out
-		var res = model["res"];
-		var shows = new Array();
-		
-		model["shows"].forEach(function(show) {
-			// TODO: make sure the show is inside the display rectangle before adding
-			
-			var shortShow = new Object();
-			shows.push(shortShow);
-			
-			var venue = show["venue"];
-			if ( null != venue ) {
-				var shortVenue = { name: venue["name"]
-					, googleId: venue["googleid"]
-					, geometry: venue["geometry"]
-					, address: venue["address"]
-					, zip: venue["zip"]
-				};
-				shortShow["venue"] = shortVenue;
-			
-				var artistList = new Array();
-				shortShow["artists"] = artistList;
-				show["jambaseArtists"].forEach(function(artist) {
-					var shortArtist = { name: artist["artist_name"].toString() };
-					artistList.push(shortArtist);
-				});
-			}
-		});
-		returnSuccess(res, shows, "shows");
+ 	this.jambaseCompletionHandler = function(model) {
+ 		fillModelFromPollstar(model);
+ 	}
+
+ 	this.pollstarVenueCompletionHandler = function(model) {
+ 		fillShowsFromPollstar(model);
+ 	}
+
+ 	this.pollstarShowCompletionHandler = function(model) {
+ 		mergeShows(model);
+		outputModel(model);
  	}
 };
 
 var eventSender = new EventSender();
 var completionHandler = new CompletionHandler(eventSender);
-eventSender.on('showCompletion', completionHandler.showHandler);
+eventSender.on(JAMBASE_COMPLETION, completionHandler.jambaseCompletionHandler);
+eventSender.on(POLLSTAR_VENUE_COMPLETION, completionHandler.pollstarVenueCompletionHandler);
+eventSender.on(POLLSTAR_SHOW_COMPLETION, completionHandler.pollstarShowCompletionHandler);
 
 
 // showListFromZipDist
@@ -78,7 +85,7 @@ exports.showListFromZipDist = function(req, res) {
 		, miles: req.params.miles
 		, startDate: startDate
 		, endDate: startDate };
-	
+
 	showsFromParams(req, res, params);
 }
 
@@ -89,15 +96,16 @@ exports.showListFromLatLng = function(req, res) {
 	// get the parameters
 	var params = new Object();
 	params["type"] = "latLng";
-	
+
 	var top = params["top"] = req.params.top;
 	var bottom = params["bottom"] = req.params.bottom;
 	var left = params["left"] = req.params.left;
 	var right = params["right"] = req.params.right;
-	
+
 	// and how big a radius?  get the dist, add a little pad, and round it
-	params["miles"] = Math.round(distFromLatLngInMi(top, left, bottom, right) * 1.25) + 1;
-		
+	params["miles"] = Math.round(
+			mathHelper.distFromLatLngInMi(top, left, bottom, right) * 1.25) + 1;
+
 	var today = new Date();
 	params["endDate"] = params["startDate"] = (today.getMonth()+1) + "/" + today.getDate() + "/" + today.getFullYear();
 
@@ -127,23 +135,13 @@ exports.getVenueInfo = function(req, res) {
     venueDb.collection(VENUE_DBNAME, function(err, collection) {
         collection.findOne({'googleid': venueId}, function(err, item) {
         	if ( null != item ) {
-				var venue = { name: item["name"]
-					, googleId: item["googleid"]
-					, geometry: item["geometry"]
-					, address: item["address"]
-					, zip: item["zip"]
-				};
-				returnSuccess(res, venue, "venue");
+        		delete item._id; // don't want to show our internal ids
+				returnJsonHelper.returnSuccess(res, venue, "venue");
         	} else {
-				returnFailure(res, "Venue " + venueId + " not found.");
+				returnJsonHelper.returnFailure(res, "Venue " + venueId + " not found.");
         	}
         });
     });
-}
-
-// nyi
-exports.getShowInfo = function(req, res) {
-	returnFailure(res, "Not yet implemented.  Sorry.");
 }
 
 
@@ -152,22 +150,22 @@ exports.getShowInfo = function(req, res) {
 // showsFromParams
 //
 // the main workerbot.  all of the parameters are smooshed into the params object
-function showsFromParams(req, res, params) {	
+function showsFromParams(req, res, params) {
 	var reqUri = "http://api.jambase.com/search"
 		+ "?zip=" + params.zip
 		+ "&radius=" + params.miles
 		+ "&startDate=" + params.startDate
 		+ "&endDate=" + params.endDate
 		+ "&apiKey=" + keys.jambaseKey;
-	console.log("Getting show list from " + reqUri);
+	console.log("Getting jambase show list from " + reqUri);
 	request({uri: reqUri}, function(err, response, body) {
 		// our model
-		var model = new Object();
-		model["numLeft"] = 0;
-		model["req"] = req;
-		model["res"] = res;
 		var shows = new Array();
-		model["shows"] = shows;
+		var model = { numLeft: 0
+			, req: req
+			, res: res
+			, shows: shows
+		};
 
 		// set up self, hang our model off of self
 		var self = this;
@@ -175,7 +173,7 @@ function showsFromParams(req, res, params) {
 
 		// lame error check
 		if (err && response.statusCode !== 200) {
-			returnFailure(res, "Failed to get JamBase info");
+			returnJsonHelper.returnFailure(res, "Failed to get JamBase info");
 		} else {
 			// parse the xml into json
 			xml2js.parseString(body, function (perr, result) {
@@ -197,6 +195,123 @@ function showsFromParams(req, res, params) {
 }
 
 
+// all filled from jambase, now fill it from pollstar
+function fillModelFromPollstar(model) {
+	var req = model["req"];
+	var shows = model["shows"];
+
+	var top = req.params.top;
+	var bottom = req.params.bottom;
+	var left = req.params.left;
+	var right = req.params.right;
+
+	var today = new Date();
+	var startDate = (today.getMonth()+1) + "/" + today.getDate() + "/" + today.getFullYear();
+
+	var miles = Math.min(
+		Math.round(mathHelper.distFromLatLngInMi(top, left, bottom, right) * 1.25) + 1,
+		50);
+	var midLat = (parseFloat(top) + parseFloat(bottom))/2;
+	var midLng = (parseFloat(left) + parseFloat(right))/2;
+
+	// call pollstar
+	// looks like this:
+	//  http://data.pollstar.com/api/pollstar.asmx/RegionEvents?lat=45.511862&
+	//    lng=-122.623018&radius=10&onlyVenuesWithEvents=1&startDate=4/16/2013&
+	//    dayCount=1&apiKey=20922-7515820
+	var reqUri = "http://data.pollstar.com/api/pollstar.asmx/RegionEvents"
+		+ "?lat=" + midLat
+		+ "&lng=" + midLng
+		+ "&radius=" + miles
+		+ "&startDate=" + startDate
+		+ "&dayCount=1&onlyVenuesWithEvents=1"
+		+ "&apiKey=" + keys.pollstarKey;
+	console.log("Getting jambase show list from " + reqUri);
+	request({uri: reqUri}, function(err, response, body) {
+		// set up self, hang our model off of self
+		var self = this;
+		self.model = model;
+
+		// lame error check
+		if (err && response.statusCode !== 200) {
+			// pollstar failed, keep going
+			eventSender.sendFinalCompletion(model);
+		} else {
+			// parse the xml into json
+			xml2js.parseString(body, function (perr, result) {
+				if ( null != result && null != result.RegionEventInfo
+						&& null != result.RegionEventInfo.Venues
+						&& null != result.RegionEventInfo.Venues[0]
+						&& null != result.RegionEventInfo.Events
+						&& null != result.RegionEventInfo.Events[0] ) {
+					// // got a result.  check 'er out
+					var venues = result.RegionEventInfo.Venues[0].Venue;
+					var events = result.RegionEventInfo.Events[0].Event;
+					model["pollstarVenues"] = venues;
+					model["pollstarEvents"] = events;
+
+					// loop through the events making 'shows' (which is an event:venue map)
+					events.forEach(function(event) {
+						var show = new Object();
+						show["pollstarEvent"] = event["$"];
+						var artists = new Array();
+						event.Artists[0].Artist.forEach( function (artist) {
+							artists.push(artist["$"]);
+						});
+						show["pollstarArtists"] = artists;
+						show["pollstarVenue"] = venueFromId(venues, event["$"].VenueID);
+						getPollstarVenueInfo(model, show);
+					}); //forEach
+				} else {
+					// empty body, move on
+					eventSender.sendFinalCompletion(model);
+				}
+			}); //xml2js
+		}
+	});
+}
+
+
+// helper
+function venueFromId(venues, id) {
+	var retval;
+	venues.forEach(function (venue) {
+		if ( venue["$"].VenueID == id ) {
+			retval = venue["$"];
+		}
+	});
+	return retval;
+}
+
+
+// done!  write it out
+function outputModel(model) {
+	var res = model["res"];
+	var shows = new Array();
+
+	model["shows"].forEach(function(show) {
+		// TODO: make sure the show is inside the display rectangle before adding
+
+		var shortShow = new Object();
+		shows.push(shortShow);
+
+		var venue = show["venue"];
+		if ( null != venue ) {
+			delete venue._id; // don't show internal ids
+			shortShow["venue"] = venue;
+
+			var artistList = new Array();
+			shortShow["artists"] = artistList;
+			show["jambaseArtists"].forEach(function(artist) {
+				var shortArtist = { name: artist["artist_name"].toString() };
+				artistList.push(shortArtist);
+			});
+		}
+	});
+	returnJsonHelper.returnSuccess(res, shows, "shows");
+}
+
+
 // zip from google places response
 function zipFromPlacesResp(body) {
 	var zip = "";
@@ -213,7 +328,7 @@ function zipFromPlacesResp(body) {
 }
 
 
-/** 
+/**
  *  manage this venue.  either get it from our db or look it up with google and add it
  *  the google api call looks like this:
  *  // https://maps.googleapis.com/maps/api/place/textsearch/json?query=Mcmenamins+White
@@ -223,8 +338,8 @@ function getOurVenueInfo(model, show) {
 	var self = this;
 	var venue = show["jambaseVenue"];
 	var jambaseId = venue.venue_id.toString();
-    console.log('Looking for venue ' + jambaseId);
-    venueDb.collection(VENUE_DBNAME, function(err, collection) {
+	console.log('Looking for venue ' + jambaseId);
+	venueDb.collection(VENUE_DBNAME, function(err, collection) {
         collection.findOne({'jambaseId': jambaseId}, function(err, item) {
         	if ( null == item ) {
         		// nope.  look it up, add it, then return it
@@ -239,11 +354,11 @@ function getOurVenueInfo(model, show) {
 				console.log("Getting uri " + reqUri);
 				request({uri: reqUri}, function(err, response, body) {
 					if (err && response.statusCode !== 200) {
-						returnFailure(res, "Google Places request failed.");
+						returnJsonHelper.returnFailure(res, "Google Places request failed.");
 					} else {
 						// body's json.  make an object
 						var gPlace = JSON.parse(body);
-						
+
 						// i'm relying on google being good and getting it on the first shot.
 						var elem = gPlace.results[0];
 						if ( null != elem ) {
@@ -254,16 +369,16 @@ function getOurVenueInfo(model, show) {
 								, jambaseId: jambaseId
 								, zip: venue.venue_zip.toString()
 							};
-							
+
 							// write it out
 							addVenue(newVenue);
-						
+
 							// save it
 							show["venue"] = newVenue;
 						}
 						if ( --model["numLeft"] == 0 ) {
 							// all done!
-							eventSender.sendShowCompletion(model);
+							eventSender.sendJambaseCompletion(model);
 						}
 					}
 				});
@@ -272,7 +387,7 @@ function getOurVenueInfo(model, show) {
 				show["venue"] = item;
 				if ( --model["numLeft"] == 0 ) {
 					// all done!
-					eventSender.sendShowCompletion(model);
+					eventSender.sendJambaseCompletion(model);
 				}
         	}
         });
@@ -280,22 +395,83 @@ function getOurVenueInfo(model, show) {
 }
 
 
-// json return helper.
-// s-u-c-c-e-s-s that's the way we spell success
-function returnSuccess(res, obj, title) {
-	var resp = new Object();
-	resp["responseCode"] = {status: "success", code: "200"};
-	console.log("Returning success - title: " + title);
-	resp[title] = obj;
-	res.jsonp(200, resp);
-}
+// same as above but for pollstar
+function getPollstarVenueInfo(model, show) {
+// step 1: is there already a pollstar venue?  if so goto 4
+	var self = this;
+	var venue = show["pollstarVenue"];
+	var venueId = venue.VenueID.toString();
+	console.log('Looking for venue ' + venueId);
+	venueDb.collection(VENUE_DBNAME, function(err, collection) {
+		collection.findOne({'pollstarId': venueId}, function(err, item) {
+        	if ( null == item ) {
+        		// nope.  look it up, add it, then return it
+				var venueName = "";
+				venue.Name.toString().split(" ").forEach(function(item) {
+					venueName += item + "+";
+				});
+// step 2: get the google venue
+				var reqUri = "https://maps.googleapis.com/maps/api/place/textsearch/json"
+					+ "?query=" + venueName + venue.Zip
+					+ "&sensor=false"
+					+ "&key=" + keys.googleKey;
+				console.log("Getting uri " + reqUri);
+				request({uri: reqUri}, function(err, response, body) {
+					if (err && response.statusCode !== 200) {
+						returnJsonHelper.returnFailure(res, "Google Places request failed.");
+					} else {
+						// body's json.  make an object
+						var gPlace = JSON.parse(body);
 
-// for failure.  like failure needs help...
-function returnFailure(res, msg) {
-	var resp = new Object();
-	console.log("Returning failure - message: " + msg);
-	resp["responseCode"] = {status: "failure", code: "404", errorMsg: msg};
-	res.jsonp(404, resp);
+						// i'm relying on google being good and getting it on the first shot.
+						var elem = gPlace.results[0];
+						if ( null != elem ) {
+							// got something.  see if the google place is already there
+							var ourVenue = { name: elem.name
+								, googleid: elem.id
+								, geometry: elem.geometry
+								, address: elem.formatted_address
+								, pollstarId: venueId
+								, zip: venue.Zip.toString()
+								, website: venue.Website.toString()
+							};
+							if ( null != venue.PhoneAreaCode && 0 < venue.PhoneAreaCode.length ) {
+								ourVenue["phone"] = "(" + venue.PhoneAreaCode.toString() + ")"
+										+ venue.PhoneNumber.toString();
+							}
+
+// step 3: add the venue or at least its data
+							addPollstarVenue(ourVenue);
+
+							// save it
+							show["venue"] = newVenue;
+						}
+						if ( --model["numLeft"] == 0 ) {
+							// all done!
+							eventSender.sendJambaseCompletion(model);
+						}
+					}
+				});
+        	} else {
+        		// got it!
+				show["venue"] = item;
+				if ( --model["numLeft"] == 0 ) {
+					// all done!
+					eventSender.sendJambaseCompletion(model);
+				}
+        	}
+		});
+	});
+
+
+
+
+	// 4: is the show already in the model?  if it is add pollstar data
+
+	// not here.  add the show
+
+	// but for now just jet.
+	eventSender.sendFinalCompletion(model);
 }
 
 
@@ -365,24 +541,3 @@ function populateDb() {
 }
 
 
-// math helpers
-var MILES_PER_KM = 0.621371;
-var EARTH_RADIUS_KM = 6371;
-function distFromLatLngInKm(lat1, lon1, lat2, lon2) {
-	var dLat = deg2rad(lat2-lat1);  // deg2rad below
-	var dLon = deg2rad(lon2-lon1); 
-	var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-		Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
-		Math.sin(dLon/2) * Math.sin(dLon/2); 
-	var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-	var d = EARTH_RADIUS_KM * c; // Distance in km
-	return d;
-}
-
-function distFromLatLngInMi(lat1, lon1, lat2, lon2) {
-	return distFromLatLngInKm(lat1, lon1, lat2, lon2) * MILES_PER_KM;
-}
-
-function deg2rad(deg) {
-	return deg * (Math.PI/180)
-}
