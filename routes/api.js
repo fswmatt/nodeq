@@ -12,6 +12,7 @@ var express = require('express')
 	, mathHelper = require('../scripts/mathHelper')
 	, returnJsonHelper = require('../scripts/returnJsonHelper')
 	, placesHelper = require('../scripts/placesHelper')
+	, zipHelper = require('../scripts/zipHelper')
 	, flowController = require('../scripts/flowController')
 	, app = express();
 
@@ -22,14 +23,14 @@ exports.showListFromZipDist = function(req, res) {
 	// get the parameters
 	var today = new Date();
 	var startDate = (today.getMonth()+1) + "/" + today.getDate() + "/" + today.getFullYear();
-	var params = { type: "zipDist"
-		, zip: req.params.zip
-		, miles: req.params.miles
+	var params = { req: req
+		, res: res
+		, type: "zipDist"
 		, startDate: startDate
 		, endDate: startDate
-		, req: req
-		, res: res
-	};
+		, zip: req.params.zip
+		, miles: req.params.miles
+		};
 
 	// todo: get lat lng from zip
 
@@ -58,7 +59,7 @@ exports.showListFromLatLng = function(req, res) {
 		+ "&sensor=false";
 	console.log("Getting zip code from " + reqUri);
 	request({uri: reqUri}, function(err, response, body) {
-		var zip = "10005";  // default. and why not ny?  i heart ny.
+		var zip = "10005";  // default. and why not ny?  i <3 ny.
 		if ( null == err ) {
 			// no error, got it
 			zip = placesHelper.zipFromPlacesResp(body);
@@ -66,16 +67,12 @@ exports.showListFromLatLng = function(req, res) {
 		var params = { req: req
 			, res: res
 			, type: "latLng"
-			, top: top
-			, left: left
-			, right: right
-			, bottom: bottom
-			, miles: Math.round(mathHelper.distFromLatLngInMi(top, left, bottom, right) * 1.25) + 1
-			, midLat: midLat
-			, midLng: midLng
 			, startDate: startDate
 			, endDate: startDate
 			, zip: zip
+			, miles: Math.round(mathHelper.distFromLatLngInMi(top, left, bottom, right) * 1.25) + 1
+			, midLat: midLat
+			, midLng: midLng
 		}
 
 		showsFromParams(params);
@@ -105,7 +102,8 @@ function showsFromParams(params) {
 		, res: params.res
 		, params: params
 	};
-	var callbacks = [ [jambase.loadJambase, pollstar.loadPollstar]
+	var callbacks = [ [loadParamWithZip],
+		, [jambase.loadJambase, pollstar.loadPollstar]
 		, [jambase.processJambaseVenues]
 		, [pollstar.processPollstarVenues]
 		, [mergeAllShows]
@@ -115,6 +113,17 @@ function showsFromParams(params) {
 		, callbacks: callbacks
 		, startNow: true
 	});
+}
+
+
+function loadParamWithZip(model) {
+	params = model.params;
+	if ( "zipDist" == params.type ) {
+		zipHelper.fillInLatLngParamsFromZip(model);
+	} else {
+		// don't have to do anything
+		model._fc.done();
+	}
 }
 
 

@@ -93,7 +93,7 @@ exports.processPollstarVenues = function(model) {
 	});
 
 	console.log("venues returned by pollstar: " + venueList);
-	dbHelper.openedVenueDb.collection(dbHelper.VENUE_DB_NAME, function(err, collection) {
+	dbHelper.openedVenueDb.collection(dbHelper.VENUE_COLL_NAME, function(err, collection) {
 		var arrStr = venueList + "";
 		var q = {'pollstarId': { $in: venueList } };
 		collection.find(q, function(err, cursor) {
@@ -241,7 +241,7 @@ function getVenues(model) {
 		model._fc.done();
 	} else {
 		console.log("Got " + newVenues.length + " unknown venues from pollstar.");
-		dbHelper.openedVenueDb.collection(dbHelper.VENUE_DB_NAME, function(err, collection) {
+		dbHelper.openedVenueDb.collection(dbHelper.VENUE_COLL_NAME, function(err, collection) {
 			// need to check for existing venues with the same google id.
 			var gids = new Array();
 			newVenues.forEach(function(venue) {

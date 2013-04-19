@@ -5,7 +5,7 @@
 // s-u-c-c-e-s-s that's the way we spell success
 exports.returnSuccess = function(res, obj, title) {
 	var resp = new Object();
-	resp["responseCode"] = {status: "success", code: "200"};
+	resp["responseCode"] = {status: "success", code: "200", count: obj.length};
 	console.log("Returning success - title: " + title);
 	resp[title] = obj;
 	res.jsonp(200, resp);

@@ -2,16 +2,18 @@
 
 var fc = require('../scripts/flowController');
 var rjh = require('../scripts/returnJsonHelper');
+var zh = require('../scripts/zipHelper');
 
 exports.test = function(req, res) {
 	var model = { req: req
 		, res: res
 		, testName: 1
 		, models: new Array()
+		, params: {zip: "10005"}
 	};
 	var callbacks1 = [ [{callback: cb1, paramsArray: ["hi", "mom"]}]
 		, [cb2, cb3]
-		, [cb4]
+		, [zh.fillInLatLngParamsFromZip]
 		, [finish]
 	];
 	new fc.FlowController({model: model

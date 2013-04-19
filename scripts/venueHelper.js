@@ -18,7 +18,7 @@ exports.addNewVenues = function(model) {
 		model._fc.done();
 	} else {
 		console.log("Writing venue info for " + venues.length + " venues.");
-		dbHelper.openedVenueDb.collection(dbHelper.VENUE_DB_NAME, function(err, collection) {
+		dbHelper.openedVenueDb.collection(dbHelper.VENUE_COLL_NAME, function(err, collection) {
 			collection.insert(venues, {safe: true}, function(err, result) {
 				if ( null == err ) {
 					if ( result != null && result[0] != null ) {
@@ -39,7 +39,7 @@ exports.addNewVenues = function(model) {
 exports.updateExistingVenues = function(model) {
 	var venues = model.venuesToUpdate;
 
-	if ( venues.length <= 0 ) {
+	if ( null == venues || venues.length == 0 ) {
 		// no venues to write.  outta here!
 		model._fc.done();
 	} else {
@@ -56,7 +56,7 @@ exports.updateExistingVenues = function(model) {
 
 function updateOne(model, venue) {
 	console.log("Updating venue info for " + venue.name);
-	dbHelper.openedVenueDb.collection(dbHelper.VENUE_DB_NAME, function(err, collection) {
+	dbHelper.openedVenueDb.collection(dbHelper.VENUE_COLL_NAME, function(err, collection) {
 		collection.update({'googleid': venue.googleid}, venue, function(err, result) {
 			if ( null == err ) {
 				if ( result != null && result[0] != null ) {

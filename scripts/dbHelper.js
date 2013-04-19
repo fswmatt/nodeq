@@ -17,10 +17,11 @@ var Server = mongo.Server
 
 // function globals
 var VENUE_DBNAME = 'venuedb';
+var VENUE_COLLECTION_NAME = 'venuedb';
 var DBPORT = 27017;
 var DB_CONN_FLAGS = {auto_reconnect: true, safe: true, w: 1};
 var DB_HOST = 'localhost';
-exports.VENUE_DB_NAME = VENUE_DBNAME;
+exports.VENUE_COLL_NAME = VENUE_COLLECTION_NAME;
 
 
 // set up global venueDb
@@ -31,9 +32,9 @@ exports.openedVenueDb = venueDb;
 venueDb.open(function(err, db) {
     if(!err) {
         console.log("Connected to '" + VENUE_DBNAME + "' database");
-        db.collection(VENUE_DBNAME, {strict:true}, function(err, collection) {
+        db.collection(VENUE_COLLECTION_NAME, {strict:true}, function(err, collection) {
             if (err) {
-                console.log(VENUE_DBNAME + " collection doesn't exist. Creating it with sample data.");
+                console.log(VENUE_COLLECTION_NAME + " collection doesn't exist. Creating it with sample data.");
                 populateDb();
             }
         });
@@ -52,7 +53,7 @@ function populateDb() {
 		, zip: "00000"
     }];
 
-	venueDb.collection(VENUE_DBNAME, function(err, collection) {
+	venueDb.collection(VENUE_COLLECTION_NAME, function(err, collection) {
 		collection.insert(venues, {safe: true}, function(err, result) {});
 		collection.ensureIndex({jambaseId: 1, pollstarId: 1, googleid: 1},
 				{background: true}, function(err, result) {});

@@ -7,6 +7,7 @@
 var util = require('util');
 var events = require('events');
 
+
 var flowCount = 0;
 
 this.FlowController = function(params) {
@@ -63,6 +64,10 @@ this.FlowController = function(params) {
 	// fire off the next ones
 	function exec() {
 		var events = theEvents.shift();
+		// WEIRD BUG: sometimes shift takes a bit to rearrange the array.  Very strange.
+		if ( null == events ) {
+			events = theEvents.shift();
+		}
 		theExecCount = getExecCount(events);
 		events.forEach(function(item) {
 			if ( item instanceof Function ) {
