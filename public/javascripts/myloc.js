@@ -5,6 +5,7 @@
 
 // global map
 var map;
+var markers = new Array();
 
 window.onload = initMap;
 
@@ -41,9 +42,7 @@ function createMap(position) {
 
 
 // global for existing markers
-var markers = new Object();
 var openInfoWindow = null;
-
 function closeInfoWindow() {
 	if ( null != openInfoWindow ) {
 		openInfoWindow.close(map);
@@ -53,30 +52,29 @@ function closeInfoWindow() {
 
 // adds a flag to the map
 function addMarker(map, latLng, title, content, id) {
-	if ( null == markers[id] ) {
-		// nope, don't have it yet.
-		var marker = new google.maps.Marker( { map: map
-			, position: latLng
-			, title: title
-			, clickable: true
-			, animation: google.maps.Animation.DROP
-		});
-		var infoWindow = new google.maps.InfoWindow( { content: content
-			, position: latLng
-		});
-		markers[id] = { marker: marker
-			, info: infoWindow
-		};
-		console.log("Adding marker for " + title);
-		google.maps.event.addListener(marker, "click", function() {
-			if ( null != openInfoWindow ) {
-				openInfoWindow.close(map);
-			}
-			infoWindow.open(map);
-			openInfoWindow = infoWindow;
-		});
-		return marker;
-	}
+	var marker = new google.maps.Marker( { map: map
+		, position: latLng
+		, title: title
+		, clickable: true
+		, animation: google.maps.Animation.DROP
+	});
+	var infoWindow = new google.maps.InfoWindow( { content: content
+		, position: latLng
+	});
+	var listener = google.maps.event.addListener(marker, "click", function() {
+		if ( null != openInfoWindow ) {
+			openInfoWindow.close(map);
+		}
+		infoWindow.open(map);
+		openInfoWindow = infoWindow;
+	});
+	var markerObj = { id: id
+		, marker: marker
+		, info: infoWindow
+		, listener: listener
+	};
+	console.log("Adding marker for " + title);
+	return markerObj;
 }
 
 
@@ -111,14 +109,39 @@ function updateBoundsDisplay(event) {
 		dataType : "json",
 
 		success: function( json ) {
+			// loop through the markers and remove the ones we don't need
+			var savedMarkers = new Array();
+			var markerIds = new Array();
+			markers.forEach(function(marker) {
+				if ( (marker.marker.position.jb < lastBounds.Z.b) ||
+						(marker.marker.position.kb < lastBounds.fa.b) ||
+						(lastBounds.Z.d < marker.marker.position.jb) ||
+						(lastBounds.fa.d < marker.marker.position.kb) ) {
+					// marker's not in our lastBounds.  delete it.
+					google.maps.event.removeListener(marker.listener);
+					marker.marker.setMap(null);
+				} else {
+					// yup in our lastBounds so save it to our new list
+					savedMarkers.push(marker);
+					markerIds.push(marker.id);
+				}
+			});
+			markers = savedMarkers;
+
 			json.shows.forEach(function (show) {
 				if ( null != show && null != show.venue && null != show.artists
-						&& null != show.artists[0] ) {
+						&& null != show.artists[0]
+						&& markerIds.indexOf(show.venue.googleid) == -1
+						&& (show.venue.location.lat >= lastBounds.Z.b)
+						&& (show.venue.location.lng >= lastBounds.fa.b)
+						&& (lastBounds.Z.d >= show.venue.location.lat)
+						&& (lastBounds.fa.d >= show.venue.location.lng) ) {
 					var gLatLng = new google.maps.LatLng(show.venue.location.lat
 						, show.venue.location.lng);
-					addMarker(map, gLatLng, show.venue.name
+					var markerObj = addMarker(map, gLatLng, show.venue.name
 						, show.artists[0].name + " at " + show.venue.name
 						, show.venue.googleid);
+					markers.push(markerObj);
 				}
 			});
 		},

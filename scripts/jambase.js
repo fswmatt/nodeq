@@ -23,6 +23,12 @@ var request = require('request')
 
 // loads up the jambase data
 exports.loadJambase = function(model) {
+	if ( (null == model.params.zip) || ("" == model.params.zip) ) {
+		// no zip - we must be in BFE.  jet.
+		model._fc.done();
+		return;
+	}
+
 	var req = model.req;
 	var res = model.res;
 	var reqUri = "http://api.jambase.com/search"
@@ -69,6 +75,12 @@ exports.loadJambase = function(model) {
 exports.processJambaseVenues = function(model) {
   	var shows = model["jambaseShows"];
   	var venueList = new Array();
+
+	if ( null == shows || 0 == shows.length ) {
+		model._fc.done();
+		return;
+	}
+
 	shows.forEach(function(show) {
 		venueList.push(parseInt(show.jambaseVenue.venue_id.toString()));
 	});

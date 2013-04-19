@@ -63,17 +63,19 @@ exports.loadPollstar = function(model) {
 					// loop through the events making 'shows' (which is an event:venue map)
 					var pollstarShows = new Array();
 					model["pollstarShows"] = pollstarShows;
-					events.forEach(function(event) {
-						var show = new Object();
-						pollstarShows.push(show);
-						show["pollstarEvent"] = event["$"];
-						var artists = new Array();
-						event.Artists[0].Artist.forEach( function (artist) {
-							artists.push(artist["$"]);
-						});
-						show["pollstarArtists"] = artists;
-						show["pollstarVenue"] = venueFromId(venues, event["$"].VenueID);
-					}); //forEach
+					if ( null != events ) {
+						events.forEach(function(event) {
+							var show = new Object();
+							pollstarShows.push(show);
+							show["pollstarEvent"] = event["$"];
+							var artists = new Array();
+							event.Artists[0].Artist.forEach( function (artist) {
+								artists.push(artist["$"]);
+							});
+							show["pollstarArtists"] = artists;
+							show["pollstarVenue"] = venueFromId(venues, event["$"].VenueID);
+						}); //forEach
+					}
 				}
 				model._fc.done();
 			}); //xml2js
@@ -85,6 +87,11 @@ exports.loadPollstar = function(model) {
 exports.processPollstarVenues = function(model) {
 	var shows = model.pollstarShows;
 	var psVenues = model.pollstarVenues;
+
+	if ( null == psVenues ) {
+		model._fc.done();
+		return;
+	}
 
 	// from the shows get the venues
 	var venueList = new Array();
