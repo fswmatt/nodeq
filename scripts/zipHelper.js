@@ -6,8 +6,7 @@
 
 
 var mongo = require('mongodb')
-	, util = util = require('util')
-	;
+	, util = require('util');
 
 
 // mongodb fun
@@ -45,8 +44,12 @@ exports.fillInLatLngParamsFromZip = function(model) {
 		console.log('query ' + JSON.stringify(q));
 		collection.find(q, { _id: 0 }, function(err, cursor) {
 			cursor.toArray(function(err, zips) {
-				model.params["midLat"] = zips[0].latitude;
-				model.params["midLng"] = zips[0].longitude;
+				if ( null == model.params.midLat ) {
+					model.params["midLat"] = zips[0].latitude;
+				}
+				if ( null == model.params.midLng ) {
+					model.params["midLng"] = zips[0].longitude;
+				}
 				model.params["zipInfo"] = zips[0];
 				model._fc.done();
 			});

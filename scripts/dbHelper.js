@@ -5,8 +5,7 @@
  */
 
 var mongo = require('mongodb')
-	, util = util = require('util')
-	;
+	, util = util = require('util');
 
 
 // mongodb fun

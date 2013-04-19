@@ -4,8 +4,8 @@
  *	Manages flows of parallel and serial execution
  */
 
-var util = require('util');
-var events = require('events');
+var util = require('util')
+	, events = require('events');
 
 
 var flowCount = 0;

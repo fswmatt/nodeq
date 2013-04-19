@@ -5,10 +5,8 @@
 var express = require('express')
 	, request = require('request')
 	, util = require('util')
-// real workers
 	, jambase = require('../scripts/jambase')
 	, pollstar = require('../scripts/pollstar')
-// helpers
 	, mathHelper = require('../scripts/mathHelper')
 	, returnJsonHelper = require('../scripts/returnJsonHelper')
 	, placesHelper = require('../scripts/placesHelper')
@@ -102,7 +100,7 @@ function showsFromParams(params) {
 		, res: params.res
 		, params: params
 	};
-	var callbacks = [ [loadParamWithZip],
+	var callbacks = [ [zipHelper.fillInLatLngParamsFromZip],
 		, [jambase.loadJambase, pollstar.loadPollstar]
 		, [jambase.processJambaseVenues]
 		, [pollstar.processPollstarVenues]
@@ -113,17 +111,6 @@ function showsFromParams(params) {
 		, callbacks: callbacks
 		, startNow: true
 	});
-}
-
-
-function loadParamWithZip(model) {
-	params = model.params;
-	if ( "zipDist" == params.type ) {
-		zipHelper.fillInLatLngParamsFromZip(model);
-	} else {
-		// don't have to do anything
-		model._fc.done();
-	}
 }
 
 
