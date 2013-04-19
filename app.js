@@ -3,11 +3,11 @@
  */
 
 var express = require('express')
-	, api = require('./routes/api')
-	, test = require('./routes/test')
 	, http = require('http')
-	, path = require('path');
-var app = express();
+	, path = require('path')
+	, api = require('./routes/api')
+	, test = require('./tests/test')
+	, app = express();
 
 // all environments
 app.set('port', process.env.PORT || 8000);
@@ -28,9 +28,15 @@ if ('development' == app.get('env')) {
 app.get('/', function(req, res) {
 	res.sendfile("./public/html/location.html");
 });
+
 app.get('/api/v0.1/getShowList/:zip/:miles', api.showListFromZipDist);
 app.get('/api/v0.1/getShowList/:top/:left/:bottom/:right', api.showListFromLatLng);
 app.get('/api/v0.1/getVenueInfo/:venueId', api.getVenueInfo);
+
+app.get('/api/v0.2/getShowList/:zip/:miles', api.showListFromZipDist);
+app.get('/api/v0.2/getShowList/:top/:left/:bottom/:right', api.showListFromLatLng);
+app.get('/api/v0.2/getVenueInfo/:venueId', api.getVenueInfo);
+
 app.get('/test', test.test);
 
 http.createServer(app).listen(app.get('port'), function(){

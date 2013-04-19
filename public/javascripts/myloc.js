@@ -2,12 +2,12 @@
  *
  *
  */
- 
+
 // global map
 var map;
 
 window.onload = initMap;
- 
+
 function initMap() {
  	if ( navigator.geolocation ) {
  		navigator.geolocation.getCurrentPosition(createMap, locationError);
@@ -27,13 +27,13 @@ function createMap(position) {
  		center: gLatLng,
  		mapTypeId: google.maps.MapTypeId.ROADMAP
  	});
- 	
+
  	// add "You Are Here" marker
  	var title = "You Are Here";
  	var content = "Lat: " + position.coords.latitude + ", Lng: " +
  			position.coords.longitude;
  	addMarker(map, gLatLng, title, content, "1");
- 	
+
  	// add listeners for bounds events
 	google.maps.event.addListener(map, "idle", updateBoundsDisplay);
 	google.maps.event.addListener(map, "click", closeInfoWindow);
@@ -58,7 +58,7 @@ function addMarker(map, latLng, title, content, id) {
 		var marker = new google.maps.Marker( { map: map
 			, position: latLng
 			, title: title
-			, clickable: true 
+			, clickable: true
 			, animation: google.maps.Animation.DROP
 		});
 		var infoWindow = new google.maps.InfoWindow( { content: content
@@ -84,17 +84,18 @@ function updateBoundsDisplay(event) {
  	// what's the bounds?
  	var bounds = map.getBounds();
   	var div = document.getElementById("mapinfo");
-  	
+  	div.innerHTML = "Updating bounds...";
+
   	// bounds are updated, get some tasty events
   	// calling our api, formatted like this:
   	//  http://localhost:8000/api/v0.1/getShowList/45.58/-122.6/45.50/-122.67
 	$.ajax({
 		// the URL for the request
-		url: "/api/v0.1/getShowList/" + bounds.Z.b + "/" + bounds.fa.b + "/" + bounds.Z.d
+		url: "/api/v0.2/getShowList/" + bounds.Z.b + "/" + bounds.fa.b + "/" + bounds.Z.d
 				+ "/" + bounds.fa.d,
 		type: "GET",
 		dataType : "json",
- 
+
 		success: function( json ) {
 			json.shows.forEach(function (show) {
 				if ( null != show && null != show.venue && null != show.artists
@@ -103,15 +104,15 @@ function updateBoundsDisplay(event) {
 						, show.venue.geometry.location.lng);
 					addMarker(map, gLatLng, show.venue.name
 						, show.artists[0].name + " at " + show.venue.name
-						, show.venue.googleId);
+						, show.venue.googleid);
 				}
 			});
 		},
- 
+
 		error: function( xhr, status ) {
 		  	div.innerHTML = "Bounds update failed.";
 		},
- 
+
 		complete: function( xhr, status ) {
 		  	div.innerHTML = "Bounds: " + bounds.toString() + " request completed.";
 		}
@@ -140,11 +141,11 @@ var MILES_PER_KM = 0.621371;
 var EARTH_RADIUS_KM = 6371;
 function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
 	var dLat = deg2rad(lat2-lat1);  // deg2rad below
-	var dLon = deg2rad(lon2-lon1); 
+	var dLon = deg2rad(lon2-lon1);
 	var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-			Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
-			Math.sin(dLon/2) * Math.sin(dLon/2); 
-	var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+			Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+			Math.sin(dLon/2) * Math.sin(dLon/2);
+	var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 	var d = EARTH_RADIUS_KM * c; // Distance in km
 	return d;
 }

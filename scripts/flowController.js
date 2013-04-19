@@ -7,77 +7,146 @@
 var util = require('util');
 var events = require('events');
 
+var flowCount = 0;
 
-// globals
-// the model initially passed in
-var theModel;
-// event array
-var theEvents = new Array();
-// # of processes currently executing
-var theExecCount = 0;
+this.FlowController = function(params) {
+	flowCount++;
 
-exports.register = function(callbacks) {
-	self = this;
- 	if ( callbacks instanceof Array ) {
-		theEvents.push(callbacks);
-	} else {
-		var arr = [callbacks];
-		theEvents.push(arr);
-	}
-}
+// constructor/initiation
+	// where we store everything
+	var theModel = new Object();
+	// event array
+	var theEvents;
+	// # of processes currently executing
+	var theExecCount = 0;
 
-exports.setModel = function(model) {
-	theModel = model;
-}
+	theModel["_fc"] = this;
 
-exports.done = function() {
-	if ( 0 < theEvents.length ) {
-		if ( --theExecCount == 0 ) {
-			// done!  fire event to exec next one
-			eventSender.fireEvent();
+
+// public methods
+
+	// registers a new callback
+	// 	this adds to the end of the callback list
+	//  if you passed in callbacks init params you shouldn't need to use this
+	this.register = function(callbacks) {
+		if ( callbacks instanceof Array ) {
+			theEvents.push(callbacks);
+		} else {
+			var arr = [callbacks];
+			theEvents.push(arr);
 		}
-	} else {
-		// all done!  turn off event listener
-		eventSender.removeListener(FCE, completionHandler.eventHandler);
 	}
-}
 
-exports.start = function() {
-	eventSender.fireEvent();
-}
+	// callbacks call this when they're done
+	this.done = function() {
+		if ( 0 < theEvents.length ) {
+			if ( --theExecCount == 0 ) {
+				// done!  fire event to exec next one
+				eventSender.fireEvent();
+			}
+		} else {
+			// all done!  turn off event listener
+			console.log("Killing event listener " + FCE);
+			eventSender.removeListener(FCE, completionHandler.eventHandler);
+		}
+	}
+
+	// call this to start it all up
+	this.start = function() {
+		eventSender.fireEvent();
+	}
 
 
-// fire off the next ones
-function exec() {
-	self = this;
-	var events = theEvents.shift();
-	theExecCount = events.length;
-	events.forEach(function(callback) {
-		callback(theModel);
-	});
-}
+
+// private
+
+	// fire off the next ones
+	function exec() {
+		var events = theEvents.shift();
+		theExecCount = getExecCount(events);
+		events.forEach(function(item) {
+			if ( item instanceof Function ) {
+				// simple item, send it on
+				setTimeout( function() {
+					item(theModel);
+				}, 0);
+			} else {
+				// complex item - the 'callback' param should be a function
+				//	and the 'paramsArray' should be parameters.
+				//	fire up one callback for each elem in paramsArray
+				item.paramsArray.forEach(function(paramItem) {
+					setTimeout( function() {
+						item.callback(theModel, paramItem);
+					}, 0);
+				});
+			}
+		});
+	}
+
+	function getExecCount(events) {
+		var count = 0;
+		events.forEach(function(item) {
+			if ( item instanceof Function ) {
+				count++;
+			} else {
+				count+= item.paramsArray.length;
+			}
+		});
+		return count;
+	}
 
 
-// and our event managers
-var FCE = 'flowControllerEvent';
+// helpers - event management
 
-// Sends events
-EventSender = function() {
-	events.EventEmitter.call(this);
-	this.fireEvent = function() {
-		this.emit(FCE);
+	// create a unique event name
+	var FCE = 'FCE_' + flowCount;
+	theModel["FCE"] = FCE;
+
+	// Sends events
+	EventSender = function() {
+		events.EventEmitter.call(this);
+		this.fireEvent = function() {
+			this.emit(FCE);
+		}
+	};
+	util.inherits(EventSender, events.EventEmitter);
+
+
+	// calls for after a completion event
+	CompletionHandler = function() {
+		this.eventHandler = function() {
+			exec();
+		}
+	};
+
+	var eventSender = new EventSender();
+	var completionHandler = new CompletionHandler(eventSender);
+	console.log("Creating event listener " + FCE);
+	eventSender.on(FCE, completionHandler.eventHandler);
+
+
+// and the rest of our constructor/initialization
+// 	do this at the end so everything else is set up before we go if we have to start
+	if ( null != params ) {
+		// copy the callback list
+		if ( null != params.callbacks ) {
+			theEvents = params.callbacks;
+		} else {
+			theEvents = new Array();
+		}
+
+		// copy initial data to theModel
+		if ( null != params.model ) {
+			for (var attr in params.model) {
+				if (params.model.hasOwnProperty(attr)) {
+					theModel[attr] = params.model[attr];
+				}
+			}
+		}
+
+		// should we start now?
+		if ( null != params.startNow && params.startNow ) {
+			this.start();
+		}
 	}
 };
-util.inherits(EventSender, events.EventEmitter);
-
-
-// calls for after a completion event
-CompletionHandler = function() {
- 	this.eventHandler = function() {
- 		exec();
- 	}
-};
-
-var eventSender = new EventSender();
-var completionHandler = new CompletionHandler(eventSender);
-eventSender.on(FCE, completionHandler.eventHandler);
