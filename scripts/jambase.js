@@ -15,9 +15,10 @@ var request = require('request')
 	, util = require('util')
 	, _ = require('underscore')
 	, dbHelper = require('../scripts/dbHelper')
-	, keys = require('../scripts/keys')
+	, venueHelper = require('../scripts/venueHelper')
 	, returnJsonHelper = require('../scripts/returnJsonHelper')
 	, flowController = require('../scripts/flowController')
+	, keys = require('../scripts/keys')
 	;
 
 
@@ -136,7 +137,8 @@ function addVenues(venueList, model) {
 		, newVenues: new Array()
 	};
 	var callbacks = [ [{callback: fillPlacesInfo, paramsArray: venueList}]
-		, [addPlacesToDb]
+		, [getVenues]
+		, [venueHelper.addNewVenues, venueHelper.updateExistingVenues]
 		, [finished]
 	];
 	var fc = new flowController.FlowController({ model: innerModel
@@ -145,7 +147,7 @@ function addVenues(venueList, model) {
 	});
 }
 
-fillPlacesInfo = function(model, show) {
+function fillPlacesInfo(model, show) {
 	var venueName = "";
 	show.jambaseVenue.venue_name.toString().split(" ").forEach(function(item) {
 		venueName += item + "+";
@@ -169,7 +171,7 @@ fillPlacesInfo = function(model, show) {
 			if ( null != elem ) {
 				var newVenue = { name: elem.name
 					, googleid: elem.id
-					, geometry: elem.geometry
+					, location: elem.geometry.location
 					, address: elem.formatted_address
 					, jambaseId: parseInt(show.jambaseVenue.venue_id[0])
 					, zip: show.jambaseVenue.venue_zip[0]
@@ -185,26 +187,61 @@ fillPlacesInfo = function(model, show) {
 }
 
 
-addPlacesToDb = function(model) {
+// get the venues
+//	some need an update, some are freshy fresh
+function getVenues(model) {
 	var newVenues = model.newVenues;
 
 	if ( newVenues.length <= 0 ) {
 		// no venues to write.  outta here!
 		model._fc.done();
 	} else {
-		console.log("Writing venue info for " + newVenues.length + " venues.");
+		console.log("Got " + newVenues.length + " unknown venues from jambase.");
 		dbHelper.openedVenueDb.collection(dbHelper.VENUE_DB_NAME, function(err, collection) {
-			collection.insert(newVenues, {safe: true}, function(err, result) {
-				if ( null == err ) {
-					if ( result != null && result[0] != null ) {
-						console.log("Wrote " + result.length + " venues");
-					} else {
-						console.log("Wrote something...");
-					}
+			// need to check for existing venues with the same google id.
+			var gids = new Array();
+			newVenues.forEach(function(venue) {
+				gids.push(venue.googleid);
+			});
+			var q = {'googleid': { $in: gids } };
+			console.log('query ' + JSON.stringify(q));
+			collection.find(q, function(err, cursor) {
+				if ( null != err || null == cursor ) {
+					console.log("error: " + err);
+					model._fc.done();
 				} else {
-					console.log("Error: " + err + " writing venues " );
+					// got some back.
+					//  create two lists:
+					//		one to update
+					//		one to create
+					cursor.toArray(function(err, venues) {
+						// venues are an array of venues already in the db
+						//	but with no jambase info
+						venues.forEach(function(venue) {
+							var index = 0;
+							newVenues.some(function(newVenue) {
+								if ( venue.googleid == newVenue.googleid ) {
+									// match!  fill in the extra info in the existing venue
+									venue["jambaseId"] = newVenue.jambaseId;
+									if ( newVenue.website != null ) {
+										venue["website"] = newVenue.website ;
+									}
+									// and remove this one from newVenues
+									newVenues.splice(index, 1);
+									return true;
+								}
+								index++;
+							});
+						});
+						// now we have two arrays:
+						//	newVenues are totally new and already in the model
+						//	venues are existing but need to be updated
+
+						// add venues to be updated to the model
+						model["venuesToUpdate"] = venues;
+						model._fc.done();
+					});
 				}
-				model._fc.done();
 			});
 		});
 	}

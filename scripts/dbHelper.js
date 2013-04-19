@@ -45,14 +45,17 @@ venueDb.open(function(err, db) {
 function populateDb() {
     var venues = [{ name: "sample"
 		, jambaseId: "0"
+		, pollstarId: "0"
 		, googleid: "sampleId"
-		, geometry: { location: {lat: 0, lng: 0}}
+		, location: {lat: 0, lng: 0}
 		, address: "sample address"
-		, zip: "00001"
+		, zip: "00000"
     }];
 
 	venueDb.collection(VENUE_DBNAME, function(err, collection) {
 		collection.insert(venues, {safe: true}, function(err, result) {});
+		collection.ensureIndex({jambaseId: 1, pollstarId: 1, googleid: 1},
+				{background: true}, function(err, result) {});
 	});
 }
 

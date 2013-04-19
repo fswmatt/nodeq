@@ -16,10 +16,10 @@ var request = require('request')
 	, util = require('util')
 	, mongo = require('mongodb')
 	, events = require('events')
-	, util = require('util')
 	, _ = require('underscore')
 	, dbHelper = require('../scripts/dbHelper')
 	, keys = require('../scripts/keys')
+	, venueHelper = require('../scripts/venueHelper')
 	, returnJsonHelper = require('../scripts/returnJsonHelper')
 	, flowController = require('../scripts/flowController')
 	;
@@ -170,7 +170,7 @@ function addVenues(venueList, model) {
 	};
 	var callbacks = [ [{callback: fillPlacesInfo, paramsArray: venueList}]
 		, [getVenues]
-		, [addNewVenues, updateExistingVenues]
+		, [venueHelper.addNewVenues, venueHelper.updateExistingVenues]
 		, [finished]
 	];
 	var fc = new flowController.FlowController({ model: innerModel
@@ -204,7 +204,7 @@ function fillPlacesInfo(model, show) {
 			if ( null != elem ) {
 				var newVenue = { name: elem.name
 					, googleid: elem.id
-					, geometry: elem.geometry
+					, location: elem.geometry.location
 					, address: elem.formatted_address
 					, pollstarId: parseInt(show.pollstarVenue.VenueID)
 					, zip: show.pollstarVenue.Zip
@@ -259,7 +259,7 @@ function getVenues(model) {
 					//		one to update
 					//		one to create
 					cursor.toArray(function(err, venues) {
-						// items are an array of venues already in the db
+						// venues are an array of venues already in the db
 						//	but with no pollstar info
 						venues.forEach(function(venue) {
 							var index = 0;
@@ -295,69 +295,6 @@ function getVenues(model) {
 			});
 		});
 	}
-}
-
-
-function addNewVenues(model) {
-	var venues = model.newVenues;
-
-	if ( venues.length <= 0 ) {
-		// no venues to write.  outta here!
-		model._fc.done();
-	} else {
-		console.log("Writing venue info for " + venues.length + " venues.");
-		dbHelper.openedVenueDb.collection(dbHelper.VENUE_DB_NAME, function(err, collection) {
-			collection.insert(venues, {safe: true}, function(err, result) {
-				if ( null == err ) {
-					if ( result != null && result[0] != null ) {
-						console.log("Wrote " + result.length + " venues");
-					} else {
-						console.log("Wrote something...");
-					}
-				} else {
-					console.log("Error: " + err + " writing venues " );
-				}
-				model._fc.done();
-			});
-		});
-	}
-}
-
-
-function updateExistingVenues(model) {
-	var venues = model.venuesToUpdate;
-
-	if ( venues.length <= 0 ) {
-		// no venues to write.  outta here!
-		model._fc.done();
-	} else {
-		var callbacks = [ [{callback: updateOne, paramsArray: venues}]
-			, [finished]
-		];
-		var fc = new flowController.FlowController({ callbacks: callbacks
-			, model: {origModel: model}
-			, startNow: true
-		});
-	}
-}
-
-
-function updateOne(model, venue) {
-	console.log("Updating venue info for " + venue.name);
-	dbHelper.openedVenueDb.collection(dbHelper.VENUE_DB_NAME, function(err, collection) {
-		collection.update({'googleid': venue.googleid}, venue, function(err, result) {
-			if ( null == err ) {
-				if ( result != null && result[0] != null ) {
-					console.log("Wrote " + result.length + " venue");
-				} else {
-					console.log("Wrote something...");
-				}
-			} else {
-				console.log("Error: " + err + " writing venues " );
-			}
-			model._fc.done();
-		});
-	});
 }
 
 

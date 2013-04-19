@@ -75,15 +75,29 @@ function addMarker(map, latLng, title, content, id) {
 			infoWindow.open(map);
 			openInfoWindow = infoWindow;
 		});
+		return marker;
 	}
 }
 
 
 // bounds changed.  update the bounds display
+var lastBounds = null;
 function updateBoundsDisplay(event) {
  	// what's the bounds?
- 	var bounds = map.getBounds();
+	var bounds = map.getBounds();
   	var div = document.getElementById("mapinfo");
+
+	// only update if the bounds expand
+	if ( null != lastBounds ) {
+		if ( (bounds.Z.b >= lastBounds.Z.b) && (bounds.fa.b >= lastBounds.fa.b) &&
+				(lastBounds.Z.d >= bounds.Z.b) && (lastBounds.fa.d >= bounds.fa.d) ) {
+			// zoomed in or moved inside the old last bounds.  don't need to refresh
+		  	div.innerHTML = "No refresh.  Max bounds " + lastBounds.toString()
+		  			+ ", current: " + bounds.toString();
+			return;
+		}
+	}
+	lastBounds = bounds;
   	div.innerHTML = "Updating bounds...";
 
   	// bounds are updated, get some tasty events
@@ -100,8 +114,8 @@ function updateBoundsDisplay(event) {
 			json.shows.forEach(function (show) {
 				if ( null != show && null != show.venue && null != show.artists
 						&& null != show.artists[0] ) {
-					var gLatLng = new google.maps.LatLng(show.venue.geometry.location.lat
-						, show.venue.geometry.location.lng);
+					var gLatLng = new google.maps.LatLng(show.venue.location.lat
+						, show.venue.location.lng);
 					addMarker(map, gLatLng, show.venue.name
 						, show.artists[0].name + " at " + show.venue.name
 						, show.venue.googleid);
