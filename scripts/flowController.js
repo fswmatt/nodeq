@@ -63,11 +63,14 @@ this.FlowController = function(params) {
 
 	// fire off the next ones
 	function exec() {
-		var events = theEvents.shift();
-		// WEIRD BUG: sometimes shift takes a bit to rearrange the array.  Very strange.
-		if ( null == events ) {
+		var events;
+		do {
 			events = theEvents.shift();
-		}
+			if ( null == events ) {
+				// empty param.  loser.
+				console.log("Empty array item in events.  Fix yer data!");
+			}
+		} while ( events == null );
 		theExecCount = getExecCount(events);
 		events.forEach(function(item) {
 			if ( item instanceof Function ) {

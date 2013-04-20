@@ -53,23 +53,35 @@ function closeInfoWindow() {
 
 var newCity = null;
 var cityList = new Object();
-cityList["BOS"] = {name: "Boston", zip:"02111", radius: 10, zoom:13, lat: 42.36837, lng: -71.0805};
-cityList["NY"] = {name: "New York", zip:10009, radius: 10, zoom:13, lat: 40.74544, lng: -73.976495};
-cityList["DC"] = {name: "Washington DC", zip:20001, radius: 10, zoom:13, lat: 38.89164, lng: -77.05118};
-cityList["MIA"] = {name: "Miami", zip:33132, radius: 15, zoom:12, lat: 25.7762, lng: -80.1736};
-cityList["NO"] = {name: "New Orleans", zip:70116, radius: 15, zoom:12, lat: 29.9654, lng: -90.063};
-cityList["CHI"] = {name: "Chicago", zip:60624, radius: 15, zoom:12, lat: 41.9072, lng: -87.66178};
-cityList["LAS"] = {name: "Las Vegas", zip:89107, radius: 15, zoom:12, lat: 36.13133, lng: -115.197};
-cityList["SEA"] = {name: "Seattle", zip:98122, radius: 15, zoom:12, lat: 47.6136, lng : -122.29257};
-cityList["PDX"] = {name: "Portland", zip: 97214, radius: 10, zoom:13, lat: 45.523, lng : -122.644};
-cityList["SMF"] = {name: "Sacramento", zip:95819, radius: 10, zoom:13, lat: 38.5698, lng: -121.465};
-cityList["SF"] = {name: "San Francisco", zip:94102, radius: 10, zoom:13, lat: 37.7787, lng: -122.421};
-cityList["LA"] = {name: "Los Angeles", zip:90036, radius: 30, zoom:11, lat: 34.09022, lng: -118.334};
+cityList["BOS"] = {name: "Boston", symbol: "BOS", zip:"02111"
+		, radius: 10, zoom:13, lat: 42.36837, lng: -71.0805};
+cityList["NY"] = {name: "New York", symbol: "NY", zip:10009
+		, radius: 10, zoom:13, lat: 40.74544, lng: -73.976495};
+cityList["DC"] = {name: "Washington DC", symbol: "DC", zip:20001
+		, radius: 10, zoom:13, lat: 38.89164, lng: -77.05118};
+cityList["MIA"] = {name: "Miami", symbol: "MIA", zip:33132
+		, radius: 15, zoom:12, lat: 25.7762, lng: -80.1736};
+cityList["NO"] = {name: "New Orleans", symbol: "NO"
+		, zip:70116, radius: 15, zoom:12, lat: 29.9654, lng: -90.063};
+cityList["CHI"] = {name: "Chicago", symbol: "CHI", zip:60624
+		, radius: 15, zoom:12, lat: 41.9072, lng: -87.66178};
+cityList["LAS"] = {name: "Las Vegas", symbol: "LAS", zip:89107
+		, radius: 15, zoom:12, lat: 36.13133, lng: -115.197};
+cityList["SEA"] = {name: "Seattle", symbol: "SEA", zip:98122
+		, radius: 15, zoom:12, lat: 47.6136, lng : -122.29257};
+cityList["PDX"] = {name: "Portland", symbol: "PDX", zip: 97214
+		, radius: 10, zoom:13, lat: 45.523, lng : -122.644};
+cityList["SMF"] = {name: "Sacramento", symbol: "SMF", zip:95819
+		, radius: 10, zoom:13, lat: 38.5698, lng: -121.465};
+cityList["SF"] = {name: "San Francisco", symbol: "SF", zip:94102
+		, radius: 10, zoom:13, lat: 37.7787, lng: -122.421};
+cityList["LA"] = {name: "Los Angeles", symbol: "LA", zip:90036
+		, radius: 30, zoom:11, lat: 34.09022, lng: -118.334};
 
 
 function initCitySelector() {
 	var theSelect = document.getElementById("citySelector");
-	theSelect.changed = false;
+	// TODO: add the options from cityList
 	theSelect.onchange = cityChanged;
 }
 
@@ -142,7 +154,8 @@ function updateBoundsDisplay(event) {
 
   	var url;
   	if ( null != newCity ) {
-  		url = "/api/v0.2/getShowList/" + newCity.zip + "/" + newCity.radius;
+  		url = "/api/v0.2/getShowList/" + newCity.zip + "/" + newCity.radius
+  				+ "?city=" + newCity.symbol;
   		newCity = null;
   	} else {
   		url = "/api/v0.2/getShowList/" + bounds.Z.b + "/" + bounds.fa.b + "/" + bounds.Z.d

@@ -11,6 +11,7 @@ var express = require('express')
 	, returnJsonHelper = require('../scripts/returnJsonHelper')
 	, placesHelper = require('../scripts/placesHelper')
 	, zipHelper = require('../scripts/zipHelper')
+	, cacheHelper = require('../scripts/cacheHelper')
 	, flowController = require('../scripts/flowController')
 	, app = express();
 
@@ -30,9 +31,14 @@ exports.showListFromZipDist = function(req, res) {
 		, miles: req.params.miles
 		};
 
-	// todo: get lat lng from zip
-
-	showsFromParams(params);
+	var city = req.query.city;
+	if ( null != city ) {
+		// it's our city.  see if it's in the cache db
+		params["city"] = city;
+		showsFromCache(params);
+	} else {
+		showsFromParams(params);
+	}
 }
 
 
@@ -94,13 +100,40 @@ exports.getVenueInfo = function(req, res) {
 }
 
 
+function showsFromCache(params) {
+	var model = { req: params.req
+		, res: params.res
+		, params: params
+	};
+	var callbacks = [ [cacheHelper.getShows]
+		, [testOutput]
+	];
+	new flowController.FlowController({ model: model
+		, callbacks: callbacks
+		, startNow: true
+	});
+}
+
+
+function testOutput(model) {
+	if ( null != model.allShows ) {
+		// cache hit
+		writeOutput(model);
+	} else {
+		// cache miss
+		showsFromParams(model.params);
+		model._fc.done();
+	}
+}
+
+
 // load up the flow controller and let 'er rip!
 function showsFromParams(params) {
 	var model = { req: params.req
 		, res: params.res
 		, params: params
 	};
-	var callbacks = [ [zipHelper.fillInLatLngParamsFromZip],
+	var callbacks = [ [zipHelper.fillInLatLngParamsFromZip]
 		, [jambase.loadJambase, pollstar.loadPollstar]
 		, [jambase.processJambaseVenues]
 		, [pollstar.processPollstarVenues]
@@ -145,7 +178,6 @@ function mergeAllShows(model) {
 	if ( null != model.jambaseShows ) {
 		var jbShows = new Array();
 		model.jambaseShows.forEach(function(show) {
-			// TODO: make sure the show is inside the display rectangle before adding
 			var venue = show.venue;
 			if ( null != venue ) {
 				// if the show's already in the previous shows list don't worry
@@ -176,6 +208,11 @@ function mergeAllShows(model) {
 
 		// now we've got two show lists.  merge 'em and put 'em on the model
 		var allShows = psShows.concat(jbShows);
+		if ( model.params.city != null ) {
+			// got a city, write it to the cache
+			cacheHelper.write(model.params.city, model.params.startDate
+					, model.params.endDate, allShows);
+		}
 		model["allShows"] = allShows;
 	} else {
 		model["allShows"] = psShows;
