@@ -6,7 +6,7 @@
 exports.returnSuccess = function(res, obj, title) {
 	var resp = new Object();
 	resp["responseCode"] = {status: "success", code: "200", count: obj.length};
-	console.log("Returning success - title: " + title);
+	console.log("Returning success - title: " + title + ", respCount: " + obj.length);
 	resp[title] = obj;
 	res.jsonp(200, resp);
 }
