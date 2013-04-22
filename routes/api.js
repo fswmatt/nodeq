@@ -116,7 +116,7 @@ function showsFromCache(params) {
 
 
 function testOutput(model) {
-	if ( null != model.allShows ) {
+	if ( null != model.data ) {
 		// cache hit
 		writeOutput(model);
 	} else {
@@ -175,6 +175,7 @@ function mergeAllShows(model) {
 		});
 	}
 
+	var allShows;
 	if ( null != model.jambaseShows ) {
 		var jbShows = new Array();
 		model.jambaseShows.forEach(function(show) {
@@ -207,25 +208,42 @@ function mergeAllShows(model) {
 		});
 
 		// now we've got two show lists.  merge 'em and put 'em on the model
-		var allShows = psShows.concat(jbShows);
-		if ( model.params.city != null ) {
-			// got a city, write it to the cache
-			cacheHelper.write(model.params.city, model.params.startDate
-					, model.params.endDate, allShows);
-		}
-		model["allShows"] = allShows;
+		allShows = psShows.concat(jbShows);
 	} else {
-		model["allShows"] = psShows;
+		allShows = psShows;
 	}
+
+	var data = { dataBounds: boundsFromModel(model)
+		, shows: allShows
+		};
+	model["data"] = data;
+	if ( model.params.city != null ) {
+		cacheHelper.write(model.params.city, model.params.startDate
+				, model.params.endDate, data);
+	}
+
 	model._fc.done();
 }
 
 
 function writeOutput(model) {
-	if ( null != model.allShows ) {
-		returnJsonHelper.returnSuccess(model.res, model.allShows, "shows");
+	if ( null != model.data ) {
+		returnJsonHelper.returnSuccess(model.res, model.data, "results");
 	} else {
 		returnJsonHelper.returnFailure(model.res, "Error.  Terribly sorry.");
 	}
 	model._fc.done();
+}
+
+
+// miles per degree lat/long
+var MILES_PER_DEGREE = 69;
+
+// get the bounding lat lng for this data set
+function boundsFromModel(model) {
+	var dist = model.params.miles / MILES_PER_DEGREE;
+	var bounds = {Z: {b: model.params.midLat + dist, d: model.params.midLat - dist}
+		, fa: {b: model.params.midLng - dist, d: model.params.midLng + dist}
+		};
+	return bounds;
 }

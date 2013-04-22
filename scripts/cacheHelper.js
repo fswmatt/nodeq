@@ -52,7 +52,7 @@ exports.getShows = function(model) {
 			cursor.toArray(function(err, data) {
 				if ( 0 < data.length ) {
 					console.log("cache HIT for " + key );
-					model["allShows"] = data[0].allShows;
+					model["data"] = data[0].data;
 				} else {
 					console.log("cache MISS for " + key );
 				}
@@ -63,7 +63,7 @@ exports.getShows = function(model) {
 }
 
 
-exports.write = function(city, startDateStr, endDateStr, allShows) {
+exports.write = function(city, startDateStr, endDateStr, data) {
 	var startDate = new Date(startDateStr);
 	var endDate = new Date(endDateStr);
 	var key = getKey(city, startDate, endDate);
@@ -71,7 +71,7 @@ exports.write = function(city, startDateStr, endDateStr, allShows) {
 		, city: city
 		, startDate: startDate
 		, endDate: endDate
-		, allShows: allShows
+		, data: data
 	};
 	console.log("Writing cache for " + key);
 	db.collection(COLLECTION_NAME, function(err, collection) {
@@ -83,7 +83,7 @@ exports.write = function(city, startDateStr, endDateStr, allShows) {
 					console.log("Wrote something...");
 				}
 			} else {
-				console.log("Error: " + err + " writing venues " );
+				console.log("Error: " + err + " writing cache" );
 			}
 		});
 	});
@@ -104,7 +104,7 @@ function populateDb() {
 		, startDate: new Date("1/1/2001")
 		, endDate: new Date("1/1/2001")
 		, city: "NONE"
-		, allShows: {hi: "mom"}
+		, data: {hi: "mom"}
     }];
 
 	db.collection(COLLECTION_NAME, function(err, collection) {
