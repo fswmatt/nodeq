@@ -158,3 +158,10 @@ this.FlowController = function(params) {
 		}
 	}
 };
+
+
+// we do this a lot!
+exports.finished = function(model) {
+	model._fc.done();
+	model.origModel._fc.done();
+}

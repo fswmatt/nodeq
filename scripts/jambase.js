@@ -69,6 +69,33 @@ exports.loadJambase = function(model) {
 }
 
 
+exports.generateShortShows = function(model) {
+	if ( null != model.jambaseShows ) {
+		var shows = new Array();
+		model.jambaseShows.forEach(function(show) {
+			var venue = show.venue;
+			if ( null != venue ) {
+				if ( null != venue._id ) {
+					delete venue._id; // don't show internal ids
+				}
+				var artistList = new Array();
+				show.jambaseArtists.forEach(function(artist) {
+					var shortArtist = { name: artist.artist_name.toString() };
+					artistList.push(shortArtist);
+				});
+				var shortShow = { venue: venue
+					, artists: artistList
+					, date: show.jambaseEvent.event_date[0]
+				};
+				shows.push(shortShow);
+			}
+		});
+	}
+	model.shortShows.push(shows);
+	model._fc.done();
+}
+
+
 // processes the jambase venues
 // built into this whole schmere is that the jambase venues are always the first one
 //	processed.  the rest go after.

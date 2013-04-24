@@ -5,8 +5,10 @@
 var express = require('express')
 	, request = require('request')
 	, util = require('util')
+	, _ = require('underscore')
 	, jambase = require('../scripts/jambase')
 	, pollstar = require('../scripts/pollstar')
+	, songkick = require('../scripts/songkick')
 	, mathHelper = require('../scripts/mathHelper')
 	, returnJsonHelper = require('../scripts/returnJsonHelper')
 	, placesHelper = require('../scripts/placesHelper')
@@ -132,11 +134,14 @@ function showsFromParams(params) {
 	var model = { req: params.req
 		, res: params.res
 		, params: params
+		, shortShows: new Array()
 	};
 	var callbacks = [ [zipHelper.fillInLatLngParamsFromZip]
-		, [jambase.loadJambase, pollstar.loadPollstar]
+		, [jambase.loadJambase, pollstar.loadPollstar, songkick.load]
 		, [jambase.processJambaseVenues]
 		, [pollstar.processPollstarVenues]
+		, [songkick.processVenues]
+		, [songkick.generateShortShows, pollstar.generateShortShows, jambase.generateShortShows]
 		, [mergeAllShows]
 		, [writeOutput]
 	];
@@ -152,71 +157,15 @@ function mergeAllShows(model) {
 	//	use the google places id as the key
 
 	// work backwards from the order we processed
-	var psShows = new Array();
-	if ( null != model.pollstarShows ) {
-		model.pollstarShows.forEach(function(show) {
-			// TODO: make sure the show is inside the display rectangle before adding
-			var venue = show.venue;
-			if ( null != venue ) {
-				if ( null != venue._id ) {
-					delete venue._id; // don't show internal ids
-				}
-				var artistList = new Array();
-				show.pollstarArtists.forEach(function(artist) {
-					var shortArtist = { name: artist.ArtistName };
-					artistList.push(shortArtist);
-				});
-				var shortShow = { venue: venue
-					, artists: artistList
-					, date: show.pollstarEvent.PlayDate
-				};
-				psShows.push(shortShow);
-			}
-		});
-	}
-
-	var allShows;
-	if ( null != model.jambaseShows ) {
-		var jbShows = new Array();
-		model.jambaseShows.forEach(function(show) {
-			var venue = show.venue;
-			if ( null != venue ) {
-				// if the show's already in the previous shows list don't worry
-				var newShow = true;
-				psShows.some(function(show) {
-					if ( show.venue.googleid == venue.googleid ) {
-						newShow = false;
-						return true;
-					}
-				});
-				if ( newShow ) {
-					if ( null != venue._id ) {
-						delete venue._id; // don't show internal ids
-					}
-					var artistList = new Array();
-					show.jambaseArtists.forEach(function(artist) {
-						var shortArtist = { name: artist.artist_name.toString() };
-						artistList.push(shortArtist);
-					});
-					var shortShow = { venue: venue
-						, artists: artistList
-						, date: show.jambaseEvent.event_date[0]
-					};
-					jbShows.push(shortShow);
-				}
-			}
-		});
-
-		// now we've got two show lists.  merge 'em and put 'em on the model
-		allShows = psShows.concat(jbShows);
-	} else {
-		allShows = psShows;
-	}
+	var allShows = _.flatten(model.shortShows);
+	var uniqueShows = _.uniq(allShows, false, function(show) {
+		return show.venue.googleid;
+	});
 
 	var data = { dataBounds: boundsFromModel(model)
 		, dateRange: {start: model.params.startDate, end: model.params.endDate}
 		, locale: model.params.city
-		, shows: allShows
+		, shows: uniqueShows
 		};
 	model["data"] = data;
 	if ( model.params.city != null ) {

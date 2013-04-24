@@ -142,8 +142,8 @@ function updateBoundsDisplay(event) {
 		if ( (bounds.Z.b <= dataBounds.Z.b) && (bounds.fa.b >= dataBounds.fa.b) &&
 				(bounds.Z.d >= dataBounds.Z.d) && (bounds.fa.d <= dataBounds.fa.d) ) {
 			// zoomed in or moved inside the old last bounds.  don't need to refresh
-			div.innerHTML = "No refresh needed.  Max bounds " + dataBounds.toString()
-					+ ", current: " + bounds.toString();
+			div.innerHTML = "No refresh needed.  Max bounds " + JSON.stringify(dataBounds)
+					+ ", current: " + JSON.stringify(bounds);
 			return;
 		}
 	}
@@ -157,7 +157,7 @@ function updateBoundsDisplay(event) {
 				&& (bounds.fa.d <= elem.results.dataBounds.fa.d) ) {
 			// it's in the cache.  just return it
 			updateDisplay(elem);
-			div.innerHTML = "Bounds " + bounds.toString() + " in local cache.";
+			div.innerHTML = "Bounds " + JSON.stringify(bounds) + " in local cache.";
 			return true;
 		}
 	});
@@ -190,7 +190,7 @@ function updateBoundsDisplay(event) {
 		},
 
 		complete: function( xhr, status ) {
-			div.innerHTML = "Bounds: " + bounds.toString() + " request completed.";
+			div.innerHTML = "Bounds: " + JSON.stringify(bounds) + " request completed.";
 		}
 	});
 }

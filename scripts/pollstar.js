@@ -151,6 +151,33 @@ exports.processPollstarVenues = function(model) {
 }
 
 
+exports.generateShortShows = function (model) {
+	var psShows = new Array();
+	if ( null != model.pollstarShows ) {
+		model.pollstarShows.forEach(function(show) {
+			var venue = show.venue;
+			if ( null != venue ) {
+				if ( null != venue._id ) {
+					delete venue._id; // don't show internal ids
+				}
+				var artistList = new Array();
+				show.pollstarArtists.forEach(function(artist) {
+					var shortArtist = { name: artist.ArtistName };
+					artistList.push(shortArtist);
+				});
+				var shortShow = { venue: venue
+					, artists: artistList
+					, date: show.pollstarEvent.PlayDate
+				};
+				psShows.push(shortShow);
+			}
+		});
+	}
+	model.shortShows.push(psShows);
+	model._fc.done();
+}
+
+
 // helper
 function venueFromId(venues, id) {
 	var retval;
