@@ -214,6 +214,8 @@ function mergeAllShows(model) {
 	}
 
 	var data = { dataBounds: boundsFromModel(model)
+		, dateRange: {start: model.params.startDate, end: model.params.endDate}
+		, locale: model.params.city
 		, shows: allShows
 		};
 	model["data"] = data;
