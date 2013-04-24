@@ -2,7 +2,11 @@
  * keys.js
  */
 
-exports.jambaseKey = "rgbaxwsmtp8j6wfdhx8n759k";
-exports.googleKey = "AIzaSyCeonGX0eTAguv5yZiCa0Rh8IrpDbthvlk";
-exports.sonicLivingKey = "3d85d18d";
-exports.pollstarKey = "20922-7515820";
+var exportedKeys = require('../../../dev/shared/sharedKeys');
+
+
+// put yer own damned keys here
+exports.jambaseKey = exportedKeys.jambaseKey;
+exports.googleKey = exportedKeys.googleKey;
+exports.sonicLivingKey = exportedKeys.sonicLivingKey;
+exports.pollstarKey = exportedKeys.pollstarKey;
