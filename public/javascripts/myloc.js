@@ -19,12 +19,26 @@ function initMap() {
 }
 
 
+function detectBrowser() {
+	var useragent = navigator.userAgent;
+	var mapdiv = document.getElementById("map-canvas");
+
+	if (useragent.indexOf('iPhone') != -1 || useragent.indexOf('Android') != -1 ) {
+		mapdiv.style.width = '100%';
+		mapdiv.style.height = '100%';
+	} else {
+		mapdiv.style.width = '600px';
+		mapdiv.style.height = '800px';
+	}
+}
+
+
 // show the location
 function createMap(position) {
 	var gLatLng = new google.maps.LatLng(position.coords.latitude,
 				position.coords.longitude);
 	// make a map
-	map = new google.maps.Map(document.getElementById("map"), {
+	map = new google.maps.Map(document.getElementById("map-canvas"), {
 		zoom: 14,
 		center: gLatLng,
 		mapTypeId: google.maps.MapTypeId.ROADMAP
