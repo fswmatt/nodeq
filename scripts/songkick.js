@@ -51,7 +51,7 @@ exports.load = function(model) {
 	var uri = "http://www.songkick.com/metro_areas/" + u;
 	console.log("Getting songkick show list from " + uri);
 	model["songkickShows"] = new Array();
-	request({uri: uri, timeout: 10000}, function(err, response, body) {
+	request({uri: uri, timeout: globals.PRIMARY_TIMEOUT}, function(err, response, body) {
 		// error check
 		if ( null != err || response == null || response.statusCode !== 200 ) {
 			console.log("Request for " + uri + " failed.");

@@ -18,6 +18,7 @@ var request = require('request')
 	, returnJsonHelper = require('../scripts/returnJsonHelper')
 	, flowController = require('../scripts/flowController')
 	, keys = require('../scripts/config/keys')
+	, globals = require('./config/globals')
 	;
 
 
@@ -38,7 +39,7 @@ exports.loadJambase = function(model) {
 		+ "&endDate=" + model.params.endDate
 		+ "&apiKey=" + keys.jambaseKey;
 	console.log("Getting jambase show list from " + reqUri);
-	request({uri: reqUri, timeout: 10000}, function(err, response, body) {
+	request({uri: reqUri, timeout: globals.PRIMARY_TIMEOUT}, function(err, response, body) {
 		// lame error check
 		if (err || null == response ||  response.statusCode !== 200) {
 			console.log(res, "Failed to get JamBase info");
@@ -197,7 +198,7 @@ function fillPlacesInfo(model, show) {
 		+ "&sensor=false"
 		+ "&key=" + keys.googleKey;
 	console.log("Getting uri " + reqUri);
-	request({uri: reqUri, timeout: 1000}, function(err, response, body) {
+	request({uri: reqUri, timeout: globals.SECONDARY_TIMEOUT}, function(err, response, body) {
 		if (null != err || null == response || response.statusCode !== 200 ) {
 			console.log("Google Places request for " + venueName + " failed.");
 			model._fc.done();

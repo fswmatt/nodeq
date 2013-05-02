@@ -5,11 +5,12 @@
  */
 
 
-var dbHelper = require('../scripts/dbHelper')
+var request = require('request')
+	, _ = require('underscore')
+	, dbHelper = require('../scripts/dbHelper')
 	, flowController = require('../scripts/flowController')
 	, keys = require('../scripts/config/keys')
-	, request = require('request')
-	, _ = require('underscore')
+	, globals = require('./config/globals')
 	;
 
 
@@ -206,7 +207,7 @@ exports.fillPlacesInfo = function(model, show, venueSearchString, venueBuilder) 
 		+ "&sensor=false"
 		+ "&key=" + keys.googleKey;
 	console.log("Getting uri " + reqUri);
-	request({uri: reqUri}, function(err, response, body) {
+	request({uri: reqUri, timeout: globals.SECONDARY_TIMEOUT}, function(err, response, body) {
 		if (err && ((null == response) || (response.statusCode !== 200))) {
 			console.log("Google Places request failed.");
 			model._fc.done();

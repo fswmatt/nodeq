@@ -13,3 +13,7 @@ exports.DB_HOST = 'mini-me.local';
 
 // jquery
 exports.JQUERY_LOC = "http://code.jquery.com/jquery-1.9.1.js";
+
+// timeouts
+exports.PRIMARY_TIMEOUT = 10000; // 10 sec
+exports.SECONDARY_TIMEOUT = 1000; // 1 sec
