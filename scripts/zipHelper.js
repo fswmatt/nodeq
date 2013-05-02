@@ -6,7 +6,9 @@
 
 
 var mongo = require('mongodb')
-	, util = require('util');
+	, util = require('util')
+	, globals = require('./config/globals')
+	;
 
 
 // mongodb fun
@@ -18,15 +20,18 @@ var Server = mongo.Server
 // function globals
 var ZIP_DBNAME = 'zipdb';
 var ZIP_COLLECTION_NAME = 'zipcodes';
-var DBPORT = 27017;
-var DB_CONN_FLAGS = {auto_reconnect: true, safe: true, w: 1};
-var DB_HOST = 'localhost';
 
 
 // set up zipdb
-var zipDb = new Db(ZIP_DBNAME, new Server(DB_HOST, DBPORT, DB_CONN_FLAGS));
+var zipDb = new Db(ZIP_DBNAME, new Server(globals.DB_HOST, globals.DBPORT
+		, globals.DB_CONN_FLAGS));
 
 
+// TODO: if the db is empty import the data and set up the indexes
+// mongoimport -d zipdb -c zipcodes --type csv --headerline zipcodes.csv
+// mongoimport -d zipdb -c fips --type csv --headerline fips_regions.csv
+// db.zipcodes.ensureIndex({zipcode:1});
+// collection.ensureIndex({zipcode: 1}, {background: true}, function(err, result) {});
 zipDb.open(function(err, db) {
     if( ! err ) {
         console.log("Connected to '" + ZIP_DBNAME + "' database");

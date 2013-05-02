@@ -5,8 +5,9 @@
  */
 
 var mongo = require('mongodb')
-	, util = util = require('util');
-
+	, util = util = require('util')
+	, globals = require('./config/globals')
+	;
 
 // mongodb fun
 var Server = mongo.Server
@@ -17,15 +18,13 @@ var Server = mongo.Server
 // function globals
 var VENUE_DBNAME = 'venuedb';
 var VENUE_COLLECTION_NAME = 'venuedb';
-var DBPORT = 27017;
-var DB_CONN_FLAGS = {auto_reconnect: true, safe: true, w: 1};
-var DB_HOST = 'localhost';
 exports.VENUE_COLL_NAME = VENUE_COLLECTION_NAME;
 
 
 // set up global venueDb
 //  creates it and pre-populates it if it doesn't yet exist
-var venueDb = new Db(VENUE_DBNAME, new Server(DB_HOST, DBPORT, DB_CONN_FLAGS));
+var venueDb = new Db(VENUE_DBNAME, new Server(globals.DB_HOST, globals.DBPORT
+		, globals.DB_CONN_FLAGS));
 exports.openedVenueDb = venueDb;
 
 venueDb.open(function(err, db) {

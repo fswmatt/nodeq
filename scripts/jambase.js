@@ -17,7 +17,7 @@ var request = require('request')
 	, venueHelper = require('../scripts/venueHelper')
 	, returnJsonHelper = require('../scripts/returnJsonHelper')
 	, flowController = require('../scripts/flowController')
-	, keys = require('../scripts/keys')
+	, keys = require('../scripts/config/keys')
 	;
 
 

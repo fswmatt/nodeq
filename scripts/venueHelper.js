@@ -7,7 +7,7 @@
 
 var dbHelper = require('../scripts/dbHelper')
 	, flowController = require('../scripts/flowController')
-	, keys = require('../scripts/keys')
+	, keys = require('../scripts/config/keys')
 	, request = require('request')
 	, _ = require('underscore')
 	;
