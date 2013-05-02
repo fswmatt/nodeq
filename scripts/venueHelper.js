@@ -208,7 +208,7 @@ exports.fillPlacesInfo = function(model, show, venueSearchString, venueBuilder) 
 	console.log("Getting uri " + reqUri);
 	request({uri: reqUri}, function(err, response, body) {
 		if (err && ((null == response) || (response.statusCode !== 200))) {
-			returnJsonHelper.returnFailure(res, "Google Places request failed.");
+			console.log("Google Places request failed.");
 			model._fc.done();
 		} else {
 			// body's json.  make an object

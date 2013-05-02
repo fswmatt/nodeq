@@ -1,16 +1,20 @@
 /**
+ *	myloc.js
  *
- *
+ *	relies on jquery
  */
 
 // global map
 var map;
 var markers = new Array();
 
+
+
 window.onload = initMap;
 
 function initMap() {
 	if ( navigator.geolocation ) {
+		$( "#datepicker" ).datepicker();
 		initCitySelector();
 		navigator.geolocation.getCurrentPosition(createMap, locationError);
 	} else {

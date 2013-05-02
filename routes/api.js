@@ -64,7 +64,7 @@ exports.showListFromLatLng = function(req, res) {
 		+ "?latlng=" + midLat + "," + midLng
 		+ "&sensor=false";
 	console.log("Getting zip code from " + reqUri);
-	request({uri: reqUri}, function(err, response, body) {
+	request({uri: reqUri, timeout: 1000}, function(err, response, body) {
 		var zip = "10005";  // default. and why not ny?  i <3 ny.
 		if ( null == err ) {
 			// no error, got it
@@ -159,7 +159,11 @@ function mergeAllShows(model) {
 	// work backwards from the order we processed
 	var allShows = _.flatten(model.shortShows);
 	var uniqueShows = _.uniq(allShows, false, function(show) {
-		return show.venue.googleid;
+		if ( show && show.venue ) {
+			return show.venue.googleid;
+		} else {
+			return null;
+		}
 	});
 
 	var data = { dataBounds: boundsFromModel(model)

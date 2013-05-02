@@ -38,10 +38,11 @@ exports.loadJambase = function(model) {
 		+ "&endDate=" + model.params.endDate
 		+ "&apiKey=" + keys.jambaseKey;
 	console.log("Getting jambase show list from " + reqUri);
-	request({uri: reqUri}, function(err, response, body) {
+	request({uri: reqUri, timeout: 10000}, function(err, response, body) {
 		// lame error check
-		if (err && response.statusCode !== 200) {
-			returnJsonHelper.returnFailure(res, "Failed to get JamBase info");
+		if (err || null == response ||  response.statusCode !== 200) {
+			console.log(res, "Failed to get JamBase info");
+			model._fc.done();
 		} else {
 			// parse the xml into json
 			xml2js.parseString(body, function (perr, result) {
@@ -196,9 +197,9 @@ function fillPlacesInfo(model, show) {
 		+ "&sensor=false"
 		+ "&key=" + keys.googleKey;
 	console.log("Getting uri " + reqUri);
-	request({uri: reqUri}, function(err, response, body) {
-		if (err && response.statusCode !== 200) {
-			returnJsonHelper.returnFailure(res, "Google Places request failed.");
+	request({uri: reqUri, timeout: 1000}, function(err, response, body) {
+		if (null != err || null == response || response.statusCode !== 200 ) {
+			console.log("Google Places request for " + venueName + " failed.");
 			model._fc.done();
 		} else {
 			// body's json.  make an object

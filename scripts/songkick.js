@@ -14,6 +14,7 @@ var request = require('request')
 	, venueHelper = require('../scripts/venueHelper')
 	, flowController = require('../scripts/flowController')
 	, keys = require('../scripts/config/keys')
+	, globals = require('./config/globals')
 	;
 
 
@@ -50,15 +51,17 @@ exports.load = function(model) {
 	var uri = "http://www.songkick.com/metro_areas/" + u;
 	console.log("Getting songkick show list from " + uri);
 	model["songkickShows"] = new Array();
-	request({uri: uri}, function(err, response, body) {
+	request({uri: uri, timeout: 10000}, function(err, response, body) {
 		// error check
-		if( err && (response != null || response.statusCode !== 200) ) {
+		if ( null != err || response == null || response.statusCode !== 200 ) {
 			console.log("Request for " + uri + " failed.");
+			model._fc.done();
+			return;
 		}
 
 		// jsdom's our own dom, and tell it to use jquery
 		jsdom.env({ html: body
-				, scripts: ["http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"] }
+				, scripts: [globals.JQUERY_LOC] }
 				, function(err, window) {
 			//Use jQuery just as in a regular HTML page
 			var $ = window.jQuery;
