@@ -28,9 +28,10 @@ var zipDb = new Db(ZIP_DBNAME, new Server(globals.DB_HOST, globals.DBPORT
 
 
 // TODO: if the db is empty import the data and set up the indexes
-// mongoimport -d zipdb -c zipcodes --type csv --headerline zipcodes.csv
+// mongoimport -d zipdb -c zipcodes --type csv --headerline zip2d.csv
 // mongoimport -d zipdb -c fips --type csv --headerline fips_regions.csv
 // db.zipcodes.ensureIndex({zipcode:1});
+// db.zipcodes.ensureIndex({loc: "2d"})
 // collection.ensureIndex({zipcode: 1}, {background: true}, function(err, result) {});
 zipDb.open(function(err, db) {
     if( ! err ) {

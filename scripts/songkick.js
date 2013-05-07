@@ -29,7 +29,7 @@ var LOCALE_TO_SK = { BOS: "18842-us-boston-cambridge"
 	, PDX: "12283-us-portland"
 	, SMF: "14039-us-sacramento"
 	, SF: "26330-us-san-francisco"
-	, LOS: "17835-us-los-angeles"
+	, LA: "17835-us-los-angeles"
 };
 
 
