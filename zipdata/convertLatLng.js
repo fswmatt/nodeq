@@ -34,7 +34,7 @@ exports.run = function(req, res) {
 			cursor.toArray(function(err, datas) {
 				if ( null != datas ) {
 					datas.forEach(function(data) {
-						data["loc"] = [data.longitude, data.latitude];
+						data["loc"] = [data.lon, data.lat];
 						zipDb.collection(ZIP_COLLECTION_NAME, function(err, collection) {
 							collection.update({'zipcode': data.zipcode}, data, function(err, result) {
 								console.log("updated location data for zip " + data.zipcode);

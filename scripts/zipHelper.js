@@ -30,9 +30,8 @@ var zipDb = new Db(ZIP_DBNAME, new Server(globals.DB_HOST, globals.DBPORT
 // TODO: if the db is empty import the data and set up the indexes
 // mongoimport -d zipdb -c zipcodes --type csv --headerline zip2d.csv
 // mongoimport -d zipdb -c fips --type csv --headerline fips_regions.csv
-// db.zipcodes.ensureIndex({zipcode:1});
-// db.zipcodes.ensureIndex({loc: "2d"})
-// collection.ensureIndex({zipcode: 1}, {background: true}, function(err, result) {});
+// collection.ensureIndex({zipcode:1}, {background: true}, function(err, result) {});
+// collection.ensureIndex({loc: "2d"}, {background: true}, function(err, result) {});
 zipDb.open(function(err, db) {
     if( ! err ) {
         console.log("Connected to '" + ZIP_DBNAME + "' database");
@@ -51,10 +50,10 @@ exports.fillInLatLngParamsFromZip = function(model) {
 		collection.find(q, { _id: 0 }, function(err, cursor) {
 			cursor.toArray(function(err, zips) {
 				if ( null == model.params.midLat ) {
-					model.params["midLat"] = zips[0].latitude;
+					model.params["midLat"] = zips[0].loc[1];
 				}
 				if ( null == model.params.midLng ) {
-					model.params["midLng"] = zips[0].longitude;
+					model.params["midLng"] = zips[0].loc[0];
 				}
 				model.params["zipInfo"] = zips[0];
 				model._fc.done();

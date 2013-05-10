@@ -170,7 +170,7 @@ function addVenues(venueList, model) {
 		, origModel: model
 		, newVenues: new Array()
 	};
-	var callbacks = [ [{callback: fillPlacesInfo, paramsArray: venueList}]
+	var callbacks = [ [{callback: fillPlacesInfo, paramsArray: venueList, max: 4}]
 		, [getVenues]
 		, [venueHelper.addNewVenues, venueHelper.updateExistingVenues]
 		, [updateShowsWithVenues]

@@ -22,7 +22,7 @@ exports.test = function(req, res) {
 	});
 
 	var callbacks2 = [ [cb4]
-		, [cb2, {callback: cb3, paramsArray: ["eat", "a", "bag", "of", "dicks"]}]
+		, [cb2, {callback: cb3, paramsArray: ["eat", "a", "bag", "of", "dicks"], max: 2}]
 		, [{callback: cb1, paramsArray: ["hi", "mom"]}]
 		, [finish]
 	];
@@ -33,7 +33,7 @@ exports.test = function(req, res) {
 	});
 
 	var callbacks3 = [ [cb4]
-		, [{callback: cb3, paramsArray: ["eat", "a", "bag", "of", "dicks"]}, cb2, {callback: cb1, paramsArray: ["hi", "mom"]}]
+		, [{callback: cb3, paramsArray: ["eat", "a", "bag", "of", "dicks"], max: 2}, cb2, {callback: cb1, paramsArray: ["hi", "mom"]}]
 		, [cb3, cb1]
 		, [finish]
 	];
@@ -51,6 +51,7 @@ exports.test = function(req, res) {
 		, callbacks: callbacks4
 		, startNow: true
 	});
+
 }
 
 function cb1(model, param) {

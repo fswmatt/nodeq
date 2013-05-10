@@ -42,7 +42,7 @@ exports.loadJambase = function(model) {
 	request({uri: reqUri, timeout: globals.PRIMARY_TIMEOUT}, function(err, response, body) {
 		// lame error check
 		if (err || null == response ||  response.statusCode !== 200) {
-			console.log(res, "Failed to get JamBase info");
+			console.log("Failed to get JamBase info");
 			model._fc.done();
 		} else {
 			// parse the xml into json
@@ -176,7 +176,7 @@ function addVenues(venueList, model) {
 		, origModel: model
 		, newVenues: new Array()
 	};
-	var callbacks = [ [{callback: fillPlacesInfo, paramsArray: venueList}]
+	var callbacks = [ [{callback: fillPlacesInfo, paramsArray: venueList, max:4}]
 		, [getVenues]
 		, [venueHelper.addNewVenues, venueHelper.updateExistingVenues]
 		, [finished]

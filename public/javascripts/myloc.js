@@ -9,6 +9,9 @@ var map;
 var markers = new Array();
 
 
+// use local cache?
+var useLocalCache = false;
+
 
 window.onload = initMap;
 
@@ -157,8 +160,8 @@ function updateBoundsDisplay(event) {
 
 	// only update if the bounds expand
 	if ( null != dataBounds ) {
-		if ( (bounds.Z.b <= dataBounds.Z.b) && (bounds.fa.b >= dataBounds.fa.b) &&
-				(bounds.Z.d >= dataBounds.Z.d) && (bounds.fa.d <= dataBounds.fa.d) ) {
+		if ( (bounds.ia.b <= dataBounds.ia.b) && (bounds.fa.b >= dataBounds.fa.b) &&
+				(bounds.ia.d >= dataBounds.ia.d) && (bounds.fa.d <= dataBounds.fa.d) ) {
 			// zoomed in or moved inside the old last bounds.  don't need to refresh
 			div.innerHTML = "No refresh needed.  Max bounds " + JSON.stringify(dataBounds)
 					+ ", current: " + JSON.stringify(bounds);
@@ -167,18 +170,21 @@ function updateBoundsDisplay(event) {
 	}
 	div.innerHTML = "Updating bounds...";
 
-	// is this in our local cache?
-	cache.forEach(function(elem) {
-		if ( (bounds.Z.b <= elem.results.dataBounds.Z.b)
-				&& (bounds.fa.b >= elem.results.dataBounds.fa.b)
-				&& (bounds.Z.d >= elem.results.dataBounds.Z.d)
-				&& (bounds.fa.d <= elem.results.dataBounds.fa.d) ) {
-			// it's in the cache.  just return it
-			updateDisplay(elem);
-			div.innerHTML = "Bounds " + JSON.stringify(bounds) + " in local cache.";
-			return true;
-		}
-	});
+	// caching?
+	if ( useLocalCache ) {
+		// is this in our local cache?
+		cache.forEach(function(elem) {
+			if ( (bounds.ia.b <= elem.results.dataBounds.ia.b)
+					&& (bounds.fa.b >= elem.results.dataBounds.fa.b)
+					&& (bounds.ia.d >= elem.results.dataBounds.ia.d)
+					&& (bounds.fa.d <= elem.results.dataBounds.fa.d) ) {
+				// it's in the cache.  just return it
+				updateDisplay(elem);
+				div.innerHTML = "Bounds " + JSON.stringify(bounds) + " in local cache.";
+				return true;
+			}
+		});
+	}
 
 
 	// bounds are updated, get some tasty events
@@ -191,9 +197,10 @@ function updateBoundsDisplay(event) {
 				+ "?city=" + newCity.symbol;
 		newCity = null;
 	} else {
-		url = "/api/v0.2/getShowList/" + bounds.Z.b + "/" + bounds.fa.b + "/" + bounds.Z.d
+		url = "/api/v0.2/getShowList/" + bounds.ia.b + "/" + bounds.fa.b + "/" + bounds.ia.d
 				+ "/" + bounds.fa.d;
 	}
+	console.log("Geting " + url);
 	$.ajax({
 		// the URL for the request
 		url: url,
@@ -215,19 +222,21 @@ function updateBoundsDisplay(event) {
 
 
 function cacheAndUpdate(data) {
-	var width = Math.abs(data.results.dataBounds.Z.b - data.results.dataBounds.Z.d)
-			* MILES_PER_DEGREE;
-	var height = Math.abs(data.results.dataBounds.fa.b - data.results.dataBounds.fa.d)
-			* MILES_PER_DEGREE;
-	var size = Math.max(width, height);
-	// if the size is too big it's not useful.  make sure the radius is small enough
-	if ( size < 50 ) {
-		// add it to the front of the cache so bigger supplants smaller
-		cache.splice(0, 0, data);
-	} else {
-		console.log("Not caching - size is " + size + ", too wide to cache.");
+	if ( useLocalCache ) {
+		var width = Math.abs(data.results.dataBounds.ia.b - data.results.dataBounds.ia.d)
+				* MILES_PER_DEGREE;
+		var height = Math.abs(data.results.dataBounds.fa.b - data.results.dataBounds.fa.d)
+				* MILES_PER_DEGREE;
+		var size = Math.max(width, height);
+		// if the size is too big it's not useful.  make sure the radius is small enough
+		if ( size < 50 ) {
+			// add it to the front of the cache so bigger supplants smaller
+			cache.splice(0, 0, data);
+		} else {
+			console.log("Not caching - size is " + size + ", too wide to cache.");
+		}
+		// and reset the bounds
 	}
-	// and reset the bounds
 	dataBounds = data.results.dataBounds;
 	updateDisplay(data);
 }
@@ -238,8 +247,8 @@ function updateDisplay(data) {
 	var savedMarkers = new Array();
 	var markerIds = new Array();
 	markers.forEach(function(marker) {
-		if ( (marker.marker.position.jb > dataBounds.Z.b)
-				|| (marker.marker.position.jb < dataBounds.Z.d)
+		if ( (marker.marker.position.jb > dataBounds.ia.b)
+				|| (marker.marker.position.jb < dataBounds.ia.d)
 				|| (marker.marker.position.kb > dataBounds.fa.d)
 				|| (marker.marker.position.kb < dataBounds.fa.b)
 				) {

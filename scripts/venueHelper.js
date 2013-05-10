@@ -47,7 +47,7 @@ exports.updateExistingVenues = function(model) {
 		// no venues to update.  outta here!
 		model._fc.done();
 	} else {
-		var callbacks = [ [{callback: updateOne, paramsArray: venues}]
+		var callbacks = [ [{callback: updateOne, paramsArray: venues, max: 4}]
 			, [flowController.finished]
 		];
 		var fc = new flowController.FlowController({ callbacks: callbacks

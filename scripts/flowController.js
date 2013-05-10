@@ -5,7 +5,8 @@
  */
 
 var util = require('util')
-	, events = require('events');
+	, events = require('events')
+	;
 
 
 var flowCount = 0;
@@ -40,6 +41,22 @@ this.FlowController = function(params) {
 
 	// callbacks call this when they're done
 	this.done = function() {
+		// got more to do?
+		if ( theModel.callbackStack ) {
+			if ( theModel.callbackStack.length > 0 ) {
+				setTimeout( function() {
+					if ( theModel.callbackStack ) {
+						var foo = theModel.callbackStack.shift();
+						if ( foo ) {
+							foo.cb(theModel, foo.param);
+						}
+					}
+				}, 0);
+			} else {
+				delete theModel.callbackStack;
+			}
+		}
+
 		if ( 0 < theEvents.length ) {
 			if ( --theExecCount == 0 ) {
 				// done!  fire event to exec next one
@@ -82,11 +99,30 @@ this.FlowController = function(params) {
 				// complex item - the 'callback' param should be a function
 				//	and the 'paramsArray' should be parameters.
 				//	fire up one callback for each elem in paramsArray
-				item.paramsArray.forEach(function(paramItem) {
-					setTimeout( function() {
-						item.callback(theModel, paramItem);
-					}, 0);
-				});
+				//	make sure we're not going past our max
+				if ( item.max && (item.max < item.paramsArray.length) ) {
+					var max = item.max;
+					if ( null == theModel.callbackStack ) {
+						theModel["callbackStack"] = new Array();
+					}
+
+					item.paramsArray.forEach(function(paramItem) {
+						theModel.callbackStack.push({cb: item.callback, param: paramItem});
+					});
+
+					while ( max-- ) {
+						setTimeout( function() {
+							var foo = theModel.callbackStack.shift();
+							foo.cb(theModel, foo.param);
+						}, 0);
+					}
+				} else {
+					item.paramsArray.forEach(function(paramItem) {
+						setTimeout( function() {
+							item.callback(theModel, paramItem);
+						}, 0);
+					});
+				}
 			}
 		});
 	}
