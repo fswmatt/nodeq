@@ -163,12 +163,13 @@ function updateBoundsDisplay(event) {
 		if ( (bounds.ia.b >= dataBounds.ia.b) && (bounds.fa.b >= dataBounds.fa.b) &&
 				(bounds.ia.d <= dataBounds.ia.d) && (bounds.fa.d <= dataBounds.fa.d) ) {
 			// zoomed in or moved inside the old last bounds.  don't need to refresh
-			div.innerHTML = "No refresh needed.  Max bounds " + JSON.stringify(dataBounds)
-					+ ", current: " + JSON.stringify(bounds);
+			div.innerHTML = "Map updated.";
+			console.log("No refresh needed.  Max bounds " + JSON.stringify(dataBounds)
+					+ ", current: " + JSON.stringify(bounds));
 			return;
 		}
 	}
-	div.innerHTML = "Updating bounds...";
+	div.innerHTML = "Updating map...";
 
 	// caching?
 	if ( useLocalCache ) {
@@ -180,7 +181,8 @@ function updateBoundsDisplay(event) {
 					&& (bounds.fa.d <= elem.results.dataBounds.fa.d) ) {
 				// it's in the cache.  just return it
 				updateDisplay(elem);
-				div.innerHTML = "Bounds " + JSON.stringify(bounds) + " in local cache.";
+				div.innerHTML = "Map updated.";
+				console.log("Bounds " + JSON.stringify(bounds) + " in local cache.");
 				return true;
 			}
 		});
@@ -211,11 +213,12 @@ function updateBoundsDisplay(event) {
 		},
 
 		error: function( xhr, status ) {
-			div.innerHTML = "Bounds update failed.";
+			div.innerHTML = "Map update failed.";
 		},
 
 		complete: function( xhr, status ) {
-			div.innerHTML = "Bounds: " + JSON.stringify(bounds) + " request completed.";
+			console.log("Bounds: " + JSON.stringify(bounds) + " request completed.");
+			div.innerHTML = "Map updated.";
 		}
 	});
 }
@@ -290,7 +293,8 @@ function locationError(error) {
 		errorMsg = errorMsg + " " + error.msg;
 	}
 	var div = document.getElementById("mapinfo");
-	div.innerHTML = errorMsg;
+	div.innerHTML = "Error getting current location.  Error: " + errorMsg;
+	log.console("Location error: " + errorMsg);
 }
 
 
