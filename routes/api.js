@@ -29,7 +29,7 @@ exports.showListFromZipDist = function(req, res) {
 		, type: "zipDist"
 		, startDate: startDate
 		, endDate: startDate
-		, zip: req.params.zip
+		, zip: parseInt(req.params.zip)
 		, miles: req.params.miles
 		};
 
@@ -54,35 +54,20 @@ exports.showListFromLatLng = function(req, res) {
 	var left = req.params.left;
 	var right = req.params.right;
 	var startDate = (today.getMonth()+1) + "/" + today.getDate() + "/" + today.getFullYear();
-
-	// figure out the zip from the lat and lng
-	//  use google reverse geocoding
-	//  http://maps.googleapis.com/maps/api/geocode/json?latlng=40.714224,-73.961452&sensor=false
 	var midLat = (parseFloat(top) + parseFloat(bottom))/2;
 	var midLng = (parseFloat(left) + parseFloat(right))/2;
-	var reqUri = "http://maps.googleapis.com/maps/api/geocode/json"
-		+ "?latlng=" + midLat + "," + midLng
-		+ "&sensor=false";
-	console.log("Getting zip code from " + reqUri);
-	request({uri: reqUri, timeout: 1000}, function(err, response, body) {
-		var zip = "10005";  // default. and why not ny?  i <3 ny.
-		if ( null == err ) {
-			// no error, got it
-			zip = placesHelper.zipFromPlacesResp(body);
-		}
-		var params = { req: req
-			, res: res
-			, type: "latLng"
-			, startDate: startDate
-			, endDate: startDate
-			, zip: zip
-			, miles: Math.round(mathHelper.distFromLatLngInMi(top, left, bottom, right) * 1.25) + 1
-			, midLat: midLat
-			, midLng: midLng
-		}
+	var params = { req: req
+		, res: res
+		, type: "latLng"
+		, startDate: startDate
+		, endDate: startDate
+		, zip: null
+		, miles: Math.round(mathHelper.distFromLatLngInMi(top, left, bottom, right) * 1.25) + 1
+		, midLat: midLat
+		, midLng: midLng
+	}
 
-		showsFromParams(params);
-	});
+	showsFromParams(params);
 }
 
 

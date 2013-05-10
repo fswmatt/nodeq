@@ -42,22 +42,43 @@ zipDb.open(function(err, db) {
 });
 
 
+// TODO: simplify this
 exports.fillInLatLngParamsFromZip = function(model) {
 	var zip = model.params.zip;
-	zipDb.collection(ZIP_COLLECTION_NAME, function(err, collection) {
-		var q = {'zipcode': parseInt(zip)};
-		console.log('query ' + JSON.stringify(q));
-		collection.find(q, { _id: 0 }, function(err, cursor) {
-			cursor.toArray(function(err, zips) {
-				if ( null == model.params.midLat ) {
-					model.params["midLat"] = zips[0].loc[1];
-				}
-				if ( null == model.params.midLng ) {
-					model.params["midLng"] = zips[0].loc[0];
-				}
-				model.params["zipInfo"] = zips[0];
-				model._fc.done();
+	if ( null == zip ) {
+		// fill in the zip
+		zipDb.collection(ZIP_COLLECTION_NAME, function(err, collection) {
+			var q = {'loc': {'$near': [model.params.midLng, model.params.midLat]}};
+			console.log('query ' + JSON.stringify(q));
+			collection.find(q, { limit: 1 }, function(err, cursor) {
+				cursor.toArray(function(err, zips) {
+					model.params["zip"] = zips[0].zipcode;
+					model.params["zipInfo"] = zips[0];
+					model._fc.done();
+				});
 			});
 		});
-	});
+	} else {
+		// fill in the lat lng
+		zipDb.collection(ZIP_COLLECTION_NAME, function(err, collection) {
+			var q = {'zipcode': parseInt(zip)};
+			console.log('query ' + JSON.stringify(q));
+			collection.find(q, { _id: 0 }, function(err, cursor) {
+				cursor.toArray(function(err, zips) {
+					if ( null == model.params.midLat ) {
+						model.params["midLat"] = zips[0].loc[1];
+					}
+					if ( null == model.params.midLng ) {
+						model.params["midLng"] = zips[0].loc[0];
+					}
+					model.params["zipInfo"] = zips[0];
+					model._fc.done();
+				});
+			});
+		});
+	}
+}
+
+
+exports.zipFromLatLng = function(lat, lng) {
 }
