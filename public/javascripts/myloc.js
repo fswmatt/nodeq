@@ -10,7 +10,7 @@ var markers = new Array();
 
 
 // use local cache?
-var useLocalCache = false;
+var useLocalCache = true;
 
 
 window.onload = initMap;
@@ -160,8 +160,8 @@ function updateBoundsDisplay(event) {
 
 	// only update if the bounds expand
 	if ( null != dataBounds ) {
-		if ( (bounds.ia.b <= dataBounds.ia.b) && (bounds.fa.b >= dataBounds.fa.b) &&
-				(bounds.ia.d >= dataBounds.ia.d) && (bounds.fa.d <= dataBounds.fa.d) ) {
+		if ( (bounds.ia.b >= dataBounds.ia.b) && (bounds.fa.b >= dataBounds.fa.b) &&
+				(bounds.ia.d <= dataBounds.ia.d) && (bounds.fa.d <= dataBounds.fa.d) ) {
 			// zoomed in or moved inside the old last bounds.  don't need to refresh
 			div.innerHTML = "No refresh needed.  Max bounds " + JSON.stringify(dataBounds)
 					+ ", current: " + JSON.stringify(bounds);
@@ -197,8 +197,8 @@ function updateBoundsDisplay(event) {
 				+ "?city=" + newCity.symbol;
 		newCity = null;
 	} else {
-		url = "/api/v0.2/getShowList/" + bounds.ia.b + "/" + bounds.fa.b + "/" + bounds.ia.d
-				+ "/" + bounds.fa.d;
+		url = "/api/v0.2/getShowList/" + bounds.fa.d + "/" + bounds.ia.b + "/" + bounds.fa.b
+				+ "/" + bounds.ia.d;
 	}
 	console.log("Geting " + url);
 	$.ajax({

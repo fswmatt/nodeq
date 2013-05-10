@@ -197,8 +197,11 @@ var MILES_PER_DEGREE = 69;
 // get the bounding lat lng for this data set
 function boundsFromModel(model) {
 	var dist = model.params.miles / MILES_PER_DEGREE;
-	var bounds = {ia: {b: model.params.midLat + dist, d: model.params.midLat - dist}
-		, fa: {b: model.params.midLng - dist, d: model.params.midLng + dist}
+	var bounds = {ia: {b: model.params.midLng - dist,
+			d: model.params.midLng + dist}
+		, fa: {b: model.params.midLat - dist,
+			d: model.params.midLat + dist}
 		};
+
 	return bounds;
 }
