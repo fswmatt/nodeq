@@ -26,16 +26,10 @@ var ZIP_COLLECTION_NAME = 'zipcodes';
 var zipDb = new Db(ZIP_DBNAME, new Server(globals.DB_HOST, globals.DBPORT
 		, globals.DB_CONN_FLAGS));
 
-
-// TODO: if the db is empty import the data and set up the indexes
-// mongoimport -d zipdb -c zipcodes --type csv --headerline zip2d.csv
-// mongoimport -d zipdb -c fips --type csv --headerline fips_regions.csv
-// collection.ensureIndex({zipcode:1}, {background: true}, function(err, result) {});
-// collection.ensureIndex({loc: "2d"}, {background: true}, function(err, result) {});
 zipDb.open(function(err, db) {
-    if( ! err ) {
+    if( !err ) {
         console.log("Connected to '" + ZIP_DBNAME + "' database");
-        db.collection(ZIP_DBNAME, {strict:true}, function(err, collection) {
+        db.collection(ZIP_COLLECTION_NAME, {strict:true}, function(err, collection) {
         	if ( err ) {
         		console.log("Initializing zip db");
         		loadZipData();
