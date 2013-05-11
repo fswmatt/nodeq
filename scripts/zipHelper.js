@@ -14,7 +14,7 @@ var mongo = require('mongodb')
 // mongodb fun
 var Server = mongo.Server
 	, Db = mongo.Db
-	, BSON = mongo.BSONPure;
+	;
 
 
 // function globals
@@ -35,7 +35,12 @@ var zipDb = new Db(ZIP_DBNAME, new Server(globals.DB_HOST, globals.DBPORT
 zipDb.open(function(err, db) {
     if( ! err ) {
         console.log("Connected to '" + ZIP_DBNAME + "' database");
-        db.collection(ZIP_DBNAME, {strict:true}, function(err, collection) {});
+        db.collection(ZIP_DBNAME, {strict:true}, function(err, collection) {
+        	if ( err ) {
+        		console.log("Initializing zip db");
+        		loadZipData();
+        	}
+        });
     } else {
         console.log("Can't connect to '" + ZIP_DBNAME + "'.  Is mongod up?");
     }
@@ -80,5 +85,38 @@ exports.fillInLatLngParamsFromZip = function(model) {
 }
 
 
-exports.zipFromLatLng = function(lat, lng) {
+var FILENAME = './zipdata/zip2d.csv';
+function loadZipData() {
+	var csv = require('csv');
+	var coll = zipDb.collection(ZIP_COLLECTION_NAME);
+
+	// Read the contents of the postal codes file and pass to our mongo postal db:
+	console.log("Reading zip data from " + FILENAME);
+	csv()
+		.from(FILENAME, { delimiter : ',', columns : true, trim: true })
+		.transform(function(data, index) {
+			var ret = { city : data.city
+				, fips_regions : data.fips_regions
+				, lon : parseFloat(data.lon)
+				, lat : parseFloat(data.lat)
+				, state : data.state
+				, zipcode : parseInt(data.zipcode)
+				, loc : [ parseFloat(data.lon), parseFloat(data.lat)]
+			};
+			return ret;
+		})
+		.on('record', function(data, index) {
+//			console.log("Writing zip " + data.zipcode);
+			coll.save(data);
+		})
+		.on('end', function(count) {
+			console.log("Number of zip codes processed: " + count);
+			coll.ensureIndex({loc: '2d'});
+			console.log("Created 2d index on loc");
+			coll.ensureIndex({zipcode: 1});
+			console.log("Created index on zipcode");
+		})
+		.on('error', function(error) {
+			console.error(error.message);
+		});
 }
