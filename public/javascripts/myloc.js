@@ -17,7 +17,11 @@ window.onload = initMap;
 
 function initMap() {
 	if ( navigator.geolocation ) {
-		$( "#datepicker" ).datepicker();
+		$("#datepicker")
+			.datepicker()
+			.change(dateChanged)
+			.val(new Date().toLocaleDateString())
+			;
 		initCitySelector();
 		navigator.geolocation.getCurrentPosition(createMap, locationError);
 	} else {
@@ -74,7 +78,7 @@ function closeInfoWindow() {
 
 var newCity = null;
 var cityList = new Object();
-cityList["BOS"] = {name: "Boston", symbol: "BOS", zip:"02111"
+cityList["BOS"] = {name: "Boston", symbol: "BOS", zip:02111
 		, radius: 18, zoom:13, lat: 42.36837, lng: -71.0805};
 cityList["NY"] = {name: "New York", symbol: "NY", zip:10009
 		, radius: 18, zoom:13, lat: 40.74544, lng: -73.976495};
@@ -118,6 +122,16 @@ function cityChanged(selector) {
 		}
 	}
 	return true;
+}
+
+
+var lastDate = new Date().toLocaleDateString();
+function dateChanged(dateBox) {
+	if ( lastDate != this.value ) {
+		// date changed.
+		console.log("New date: " + this.value);
+		lastDate = this.value;
+	}
 }
 
 
@@ -200,7 +214,11 @@ function updateBoundsDisplay(event) {
 		newCity = null;
 	} else {
 		url = "/api/v0.2/getShowList/" + bounds.fa.d + "/" + bounds.ia.b + "/" + bounds.fa.b
-				+ "/" + bounds.ia.d;
+				+ "/" + bounds.ia.d + "?";
+	}
+	var d = $("#datepicker").val();
+	if ( d ) {
+		url += "&startDate=" + d;
 	}
 	console.log("Geting " + url);
 	$.ajax({

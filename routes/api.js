@@ -22,7 +22,8 @@ var express = require('express')
 exports.showListFromZipDist = function(req, res) {
 	// get the parameters
 	var today = new Date();
-	var startDate = (today.getMonth()+1) + "/" + today.getDate() + "/" + today.getFullYear();
+	var startDate = req.query.startDate ? req.query.startDate
+			: (today.getMonth()+1) + "/" + today.getDate() + "/" + today.getFullYear();
 	var params = { req: req
 		, res: res
 		, type: "zipDist"
@@ -52,7 +53,8 @@ exports.showListFromLatLng = function(req, res) {
 	var bottom = req.params.bottom;
 	var left = req.params.left;
 	var right = req.params.right;
-	var startDate = (today.getMonth()+1) + "/" + today.getDate() + "/" + today.getFullYear();
+	var startDate = req.query.startDate ? req.query.startDate
+			: (today.getMonth()+1) + "/" + today.getDate() + "/" + today.getFullYear();
 	var midLat = (parseFloat(top) + parseFloat(bottom))/2;
 	var midLng = (parseFloat(left) + parseFloat(right))/2;
 	var params = { req: req
@@ -61,7 +63,7 @@ exports.showListFromLatLng = function(req, res) {
 		, startDate: startDate
 		, endDate: startDate
 		, zip: null
-		, miles: Math.round(mathHelper.distFromLatLngInMi(top, left, bottom, right) * 1.25) + 1
+		, miles: Math.round(mathHelper.distFromLatLngInMi(top, left, bottom, right) * 1.15) + 1
 		, midLat: midLat
 		, midLng: midLng
 	}
