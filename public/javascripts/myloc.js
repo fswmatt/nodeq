@@ -131,6 +131,8 @@ function dateChanged(dateBox) {
 		// date changed.
 		console.log("New date: " + this.value);
 		lastDate = this.value;
+		clearAllMarkers();
+		updateBoundsDisplay(true);
 	}
 }
 
@@ -167,17 +169,17 @@ function addMarker(map, latLng, title, content, id) {
 
 // bounds changed.	update the bounds display
 var dataBounds = null;
-function updateBoundsDisplay(event) {
+function updateBoundsDisplay(forceIt) {
 	// what's the bounds?
 	var bounds = map.getBounds();
 	var div = document.getElementById("mapinfo");
 
 	// only update if the bounds expand
-	if ( null != dataBounds ) {
+	if ( !forceIt && dataBounds ) {
 		if ( (bounds.ia.b >= dataBounds.ia.b) && (bounds.fa.b >= dataBounds.fa.b) &&
 				(bounds.ia.d <= dataBounds.ia.d) && (bounds.fa.d <= dataBounds.fa.d) ) {
 			// zoomed in or moved inside the old last bounds.  don't need to refresh
-			div.innerHTML = "Map updated.";
+			div.innerHTML = "No update needed.";
 			console.log("No refresh needed.  Max bounds " + JSON.stringify(dataBounds)
 					+ ", current: " + JSON.stringify(bounds));
 			return;
@@ -189,13 +191,16 @@ function updateBoundsDisplay(event) {
 	if ( useLocalCache ) {
 		// is this in our local cache?
 		cache.forEach(function(elem) {
-			if ( (bounds.ia.b <= elem.results.dataBounds.ia.b)
+			var dateDelta = new Date(elem.results.dateRange.start) - new Date($("#datepicker").val());
+			if ( (bounds.ia.b >= elem.results.dataBounds.ia.b)
 					&& (bounds.fa.b >= elem.results.dataBounds.fa.b)
-					&& (bounds.ia.d >= elem.results.dataBounds.ia.d)
-					&& (bounds.fa.d <= elem.results.dataBounds.fa.d) ) {
+					&& (bounds.ia.d <= elem.results.dataBounds.ia.d)
+					&& (bounds.fa.d <= elem.results.dataBounds.fa.d)
+					&& ( 0 == dateDelta )
+					) {
 				// it's in the cache.  just return it
 				updateDisplay(elem);
-				div.innerHTML = "Map updated.";
+				div.innerHTML = "Map in cache.";
 				console.log("Bounds " + JSON.stringify(bounds) + " in local cache.");
 				return true;
 			}
@@ -260,6 +265,15 @@ function cacheAndUpdate(data) {
 	}
 	dataBounds = data.results.dataBounds;
 	updateDisplay(data);
+}
+
+
+function clearAllMarkers() {
+	markers.forEach(function(marker) {
+		google.maps.event.removeListener(marker.listener);
+		marker.marker.setMap(null);
+	});
+	markers = new Array();
 }
 
 
