@@ -59,7 +59,7 @@ function createMap(position) {
 	var title = "You Are Here";
 	var content = "Lat: " + position.coords.latitude + ", Lng: " +
 			position.coords.longitude;
-	addMarker(map, gLatLng, title, content, "1");
+	addMarker(map, gLatLng, title, content, "1", "here");
 
 	// add listeners for bounds events
 	google.maps.event.addListener(map, "idle", updateBoundsDisplay);
@@ -140,7 +140,7 @@ function dateChanged(dateBox) {
 var cache = new Array();
 
 // adds a flag to the map
-function addMarker(map, latLng, title, content, id) {
+function addMarker(map, latLng, title, content, id, type) {
 	var marker = new google.maps.Marker( { map: map
 		, position: latLng
 		, title: title
@@ -302,15 +302,23 @@ function updateDisplay(data) {
 	});
 	markers = savedMarkers;
 
-	data.results.shows.forEach(function (show) {
+	data.results.shows.forEach(function(show) {
 		if ( null != show && null != show.venue && null != show.artists
 				&& null != show.artists[0]
 				&& markerIds.indexOf(show.venue.googleid) == -1 ) {
 			var gLatLng = new google.maps.LatLng(show.venue.location.lat
 				, show.venue.location.lng);
+			var artists = "";
+			show.artists.forEach(function(artist, index, array) {
+				artists += artist.name;
+				if ( index+1 < array.length ) {
+					artists += ", ";
+				}
+			});
 			var markerObj = addMarker(map, gLatLng, show.venue.name
-				, show.artists[0].name + " at " + show.venue.name
-				, show.venue.googleid);
+				, artists + " at " + show.venue.name
+				, show.venue.googleid
+				, "concert");
 			markers.push(markerObj);
 		}
 	});
