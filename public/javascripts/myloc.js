@@ -188,9 +188,10 @@ function updateBoundsDisplay(forceIt) {
 	div.innerHTML = "Updating map...";
 
 	// caching?
+	var foundIt = false;
 	if ( useLocalCache ) {
 		// is this in our local cache?
-		cache.forEach(function(elem) {
+		foundIt = cache.some(function(elem) {
 			var dateDelta = new Date(elem.results.dateRange.start) - new Date($("#datepicker").val());
 			if ( (bounds.ia.b >= elem.results.dataBounds.ia.b)
 					&& (bounds.fa.b >= elem.results.dataBounds.fa.b)
@@ -205,6 +206,9 @@ function updateBoundsDisplay(forceIt) {
 				return true;
 			}
 		});
+	}
+	if ( foundIt ) {
+		return;
 	}
 
 
