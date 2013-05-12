@@ -57,9 +57,7 @@ function createMap(position) {
 
 	// add "You Are Here" marker
 	var title = "You Are Here";
-	var content = "Lat: " + position.coords.latitude + ", Lng: " +
-			position.coords.longitude;
-	addMarker(map, gLatLng, title, content, "1", "here");
+	addMarker(map, gLatLng, title, "That's you!", "1", "here");
 
 	// add listeners for bounds events
 	google.maps.event.addListener(map, "idle", updateBoundsDisplay);
@@ -273,6 +271,7 @@ function cacheAndUpdate(data) {
 
 
 function clearAllMarkers() {
+	closeInfoWindow();
 	markers.forEach(function(marker) {
 		google.maps.event.removeListener(marker.listener);
 		marker.marker.setMap(null);

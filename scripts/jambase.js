@@ -53,15 +53,21 @@ exports.loadJambase = function(model) {
 
 					// do we need this if we've got the pre-managed jambaseShows?
 					model["jambaseResult"] = result.JamBase_Data.event;
-
 					var shows = new Array();
 					model["jambaseShows"] = shows;
+					var startDate = new Date(model.params.startDate);
+					var endDate = new Date(model.params.endDate);
 					result.JamBase_Data.event.forEach(function(theEvent) {
-						var show = { jambaseEvent: theEvent
-							, jambaseVenue: theEvent.venue[0]
-							, jambaseArtists: theEvent.artists[0].artist
+						var eventDate = new Date(theEvent.event_date[0]);
+						var startDateDelta = startDate - eventDate;
+						var endDateDelta = endDate - eventDate
+						if ( 0 >= startDateDelta && 0 <= endDateDelta) {
+							var show = { jambaseEvent: theEvent
+								, jambaseVenue: theEvent.venue[0]
+								, jambaseArtists: theEvent.artists[0].artist
+							}
+							shows.push(show);
 						}
-						shows.push(show);
 					});
 				}
 				model._fc.done();
