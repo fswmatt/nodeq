@@ -12,5 +12,7 @@
 		, "request": "2.16.6"
 		, "xml2js": "0.2.6"
 		, "underscore": "1.4.4"
+		, "csv": "0.3.0"
+		, "express-device": "0.3.6"
 	}
 }
