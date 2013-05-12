@@ -60,7 +60,7 @@ exports.loadJambase = function(model) {
 					result.JamBase_Data.event.forEach(function(theEvent) {
 						var eventDate = new Date(theEvent.event_date[0]);
 						var startDateDelta = startDate - eventDate;
-						var endDateDelta = endDate - eventDate
+						var endDateDelta = endDate - eventDate;
 						if ( 0 >= startDateDelta && 0 <= endDateDelta) {
 							var show = { jambaseEvent: theEvent
 								, jambaseVenue: theEvent.venue[0]
