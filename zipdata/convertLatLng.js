@@ -6,7 +6,7 @@
 
 var mongo = require('mongodb')
 	, util = require('util')
-	, globals = require('../scripts/config/globals')
+	, globals = require('../config/globals')
 	;
 
 
@@ -23,7 +23,7 @@ var ZIP_COLLECTION_NAME = 'zipcodes';
 
 
 // set up zipdb
-var zipDb = new Db(ZIP_DBNAME, new Server(globals.DB_HOST, globals.DBPORT
+var zipDb = new Db(ZIP_DBNAME, new Server(globals.DB_HOST, globals.DB_PORT
 		, globals.DB_CONN_FLAGS));
 
 

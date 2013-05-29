@@ -31,11 +31,11 @@ app.get('/', function(req, res) {
 });
 
 app.get('/api/v0.1/getShowList/:zip/:miles', api.showListFromZipDist);
-app.get('/api/v0.1/getShowList/:top/:left/:bottom/:right', api.showListFromLatLng);
+app.get('/api/v0.1/getShowList/:north/:west/:south/:east', api.showListFromLatLng);
 app.get('/api/v0.1/getVenueInfo/:venueId', api.getVenueInfo);
 
 app.get('/api/v0.2/getShowList/:zip/:miles', api.showListFromZipDist);
-app.get('/api/v0.2/getShowList/:top/:left/:bottom/:right', api.showListFromLatLng);
+app.get('/api/v0.2/getShowList/:north/:west/:south/:east', api.showListFromLatLng);
 app.get('/api/v0.2/getVenueInfo/:venueId', api.getVenueInfo);
 
 app.get('/test', test.test);

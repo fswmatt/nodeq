@@ -2,7 +2,7 @@
  * keys.js
  */
 
-var exportedKeys = require('../../../../dev/shared/sharedKeys');
+var exportedKeys = require('../../../dev/shared/sharedKeys');
 
 
 // put yer own damned keys here

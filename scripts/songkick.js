@@ -13,8 +13,8 @@ var request = require('request')
 	, dbHelper = require('../scripts/dbHelper')
 	, venueHelper = require('../scripts/venueHelper')
 	, flowController = require('../scripts/flowController')
-	, keys = require('../scripts/config/keys')
-	, globals = require('./config/globals')
+	, keys = require('../config/keys')
+	, globals = require('../config/globals')
 	;
 
 

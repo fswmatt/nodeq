@@ -49,21 +49,21 @@ exports.showListFromZipDist = function(req, res) {
 exports.showListFromLatLng = function(req, res) {
 	// get the parameters
 	var today = new Date();
-	var top = req.params.top;
-	var bottom = req.params.bottom;
-	var left = req.params.left;
-	var right = req.params.right;
+	var north = req.params.north;
+	var west = req.params.west;
+	var south = req.params.south;
+	var east = req.params.east;
 	var startDate = req.query.startDate ? req.query.startDate
 			: (today.getMonth()+1) + "/" + today.getDate() + "/" + today.getFullYear();
-	var midLat = (parseFloat(top) + parseFloat(bottom))/2;
-	var midLng = (parseFloat(left) + parseFloat(right))/2;
+	var midLat = (parseFloat(north) + parseFloat(south))/2;
+	var midLng = (parseFloat(west) + parseFloat(east))/2;
 	var params = { req: req
 		, res: res
 		, type: "latLng"
 		, startDate: startDate
 		, endDate: startDate
 		, zip: null
-		, miles: Math.round(mathHelper.distFromLatLngInMi(top, left, bottom, right) * 1.15) + 1
+		, miles: Math.round(mathHelper.distFromLatLngInMi(north, west, south, east) * 1.15) + 1
 		, midLat: midLat
 		, midLng: midLng
 	}
@@ -182,11 +182,11 @@ var MILES_PER_DEGREE = 69;
 
 // get the bounding lat lng for this data set
 function boundsFromModel(model) {
-	var dist = model.params.miles / MILES_PER_DEGREE;
-	var bounds = {ia: {b: model.params.midLng - dist,
-			d: model.params.midLng + dist}
-		, fa: {b: model.params.midLat - dist,
-			d: model.params.midLat + dist}
+	var dist = model.params.miles / MILES_PER_DEGREE / 2;
+	var bounds = { north: model.params.midLat + dist
+			, west: model.params.midLng + dist
+			, south: model.params.midLat - dist
+			, east: model.params.midLng - dist
 		};
 
 	return bounds;

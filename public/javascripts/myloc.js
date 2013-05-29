@@ -169,13 +169,18 @@ function addMarker(map, latLng, title, content, id, type) {
 var dataBounds = null;
 function updateBoundsDisplay(forceIt) {
 	// what's the bounds?
-	var bounds = map.getBounds();
+	var mapBounds = map.getBounds();
+	var ne = mapBounds.getNorthEast();
+	var sw = mapBounds.getSouthWest();
+	var bounds = {north: ne.lat()
+			, east: ne.lng()
+			, south: sw.lat()
+			, west: sw.lng()};
 	var div = document.getElementById("mapinfo");
 
 	// only update if the bounds expand
 	if ( !forceIt && dataBounds ) {
-		if ( (bounds.ia.b >= dataBounds.ia.b) && (bounds.fa.b >= dataBounds.fa.b) &&
-				(bounds.ia.d <= dataBounds.ia.d) && (bounds.fa.d <= dataBounds.fa.d) ) {
+		if ( isRectInsideRect(dataBounds, bounds) ) {
 			// zoomed in or moved inside the old last bounds.  don't need to refresh
 			div.innerHTML = "No update needed.";
 			console.log("No refresh needed.  Max bounds " + JSON.stringify(dataBounds)
@@ -189,12 +194,10 @@ function updateBoundsDisplay(forceIt) {
 	var foundIt = false;
 	if ( useLocalCache ) {
 		// is this in our local cache?
+		var pickerDate = new Date($("#datepicker").val());
 		foundIt = cache.some(function(elem) {
-			var dateDelta = new Date(elem.results.dateRange.start) - new Date($("#datepicker").val());
-			if ( (bounds.ia.b >= elem.results.dataBounds.ia.b)
-					&& (bounds.fa.b >= elem.results.dataBounds.fa.b)
-					&& (bounds.ia.d <= elem.results.dataBounds.ia.d)
-					&& (bounds.fa.d <= elem.results.dataBounds.fa.d)
+			var dateDelta = new Date(elem.results.dateRange.start) - pickerDate;
+			if ( isRectInsideRect(elem.results.dataBounds, bounds)
 					&& ( 0 == dateDelta )
 					) {
 				// it's in the cache.  just return it
@@ -220,8 +223,8 @@ function updateBoundsDisplay(forceIt) {
 				+ "?city=" + newCity.symbol;
 		newCity = null;
 	} else {
-		url = "/api/v0.2/getShowList/" + bounds.fa.d + "/" + bounds.ia.b + "/" + bounds.fa.b
-				+ "/" + bounds.ia.d + "?";
+		url = "/api/v0.2/getShowList/" + bounds.north + "/" + bounds.west + "/" + bounds.south
+				+ "/" + bounds.east + "?";
 	}
 	var d = $("#datepicker").val();
 	if ( d ) {
@@ -249,11 +252,27 @@ function updateBoundsDisplay(forceIt) {
 }
 
 
+function isRectInsideRect(outer, inner) {
+	return ( outer.north >= inner.north
+		&& outer.south <= inner.south
+		&& outer.west >= inner.west
+		&& outer.east <= inner.east );
+}
+
+
+function isPointInRect(rect, lat, lng) {
+	return ( rect.north >= lat
+		&& rect.south <= lat
+		&& rect.west >= lng
+		&& rect.east <= lng );
+}
+
+
 function cacheAndUpdate(data) {
 	if ( useLocalCache ) {
-		var width = Math.abs(data.results.dataBounds.ia.b - data.results.dataBounds.ia.d)
+		var width = Math.abs(data.results.dataBounds.east - data.results.dataBounds.west)
 				* MILES_PER_DEGREE;
-		var height = Math.abs(data.results.dataBounds.fa.b - data.results.dataBounds.fa.d)
+		var height = Math.abs(data.results.dataBounds.north - data.results.dataBounds.south)
 				* MILES_PER_DEGREE;
 		var size = Math.max(width, height);
 		// if the size is too big it's not useful.  make sure the radius is small enough
@@ -285,18 +304,15 @@ function updateDisplay(data) {
 	var savedMarkers = new Array();
 	var markerIds = new Array();
 	markers.forEach(function(marker) {
-		if ( (marker.marker.position.jb > dataBounds.ia.b)
-				|| (marker.marker.position.jb < dataBounds.ia.d)
-				|| (marker.marker.position.kb > dataBounds.fa.d)
-				|| (marker.marker.position.kb < dataBounds.fa.b)
-				) {
-			// marker's not in our dataBounds.	delete it.
-			google.maps.event.removeListener(marker.listener);
-			marker.marker.setMap(null);
-		} else {
+		if ( isPointInRect(dataBounds, marker.marker.position.lat(),
+				marker.marker.position.lng()) ) {
 			// yup in our dataBounds so save it to our new list
 			savedMarkers.push(marker);
 			markerIds.push(marker.id);
+		} else {
+			// marker's not in our dataBounds.	delete it.
+			google.maps.event.removeListener(marker.listener);
+			marker.marker.setMap(null);
 		}
 	});
 	markers = savedMarkers;

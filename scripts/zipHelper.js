@@ -5,38 +5,28 @@
  */
 
 
-var mongo = require('mongodb')
-	, util = require('util')
-	, globals = require('./config/globals')
-	;
-
-
-// mongodb fun
-var Server = mongo.Server
-	, Db = mongo.Db
+var mongoClient = require('mongodb').MongoClient
+	, globals = require('../config/globals')
 	;
 
 
 // function globals
-var ZIP_DBNAME = 'zipdb';
 var ZIP_COLLECTION_NAME = 'zipcodes';
 
-
-// set up zipdb
-var zipDb = new Db(ZIP_DBNAME, new Server(globals.DB_HOST, globals.DBPORT
-		, globals.DB_CONN_FLAGS));
-
-zipDb.open(function(err, db) {
+var zipDb = null;
+mongoClient.connect(globals.DB_URL, function(err, db) {
     if( !err ) {
-        console.log("Connected to '" + ZIP_DBNAME + "' database");
-        db.collection(ZIP_COLLECTION_NAME, {strict:true}, function(err, collection) {
+		zipDb = db;
+        zipDb.collection(ZIP_COLLECTION_NAME, {strict:true}, function(err, collection) {
+	        console.log("Connected to '" + globals.DB_URL + "' database, collection "
+    		    	+ ZIP_COLLECTION_NAME);
         	if ( err ) {
-        		console.log("Initializing zip db");
+        		console.log("Loading zip db data");
         		loadZipData();
         	}
         });
     } else {
-        console.log("Can't connect to '" + ZIP_DBNAME + "'.  Is mongod up?");
+        console.log("Can't connect to '" + globals.DB_URL + "'.  Is mongod up?");
     }
 });
 
@@ -82,7 +72,7 @@ exports.fillInLatLngParamsFromZip = function(model) {
 var FILENAME = './zipdata/zip2d.csv';
 function loadZipData() {
 	var csv = require('csv');
-	var coll = zipDb.collection(ZIP_COLLECTION_NAME);
+	var collection = zipDb.collection(ZIP_COLLECTION_NAME);
 
 	// Read the contents of the postal codes file and pass to our mongo postal db:
 	console.log("Reading zip data from " + FILENAME);
@@ -101,13 +91,17 @@ function loadZipData() {
 		})
 		.on('record', function(data, index) {
 //			console.log("Writing zip " + data.zipcode);
-			coll.save(data);
+			collection.save(data, function(err, result) {
+				if ( null != err ) {
+					console.log("Error writing zip: " + err);
+				}
+			});
 		})
 		.on('end', function(count) {
 			console.log("Number of zip codes processed: " + count);
-			coll.ensureIndex({loc: '2d'});
+			collection.ensureIndex({loc: '2d'}, function(err, result) {});
 			console.log("Created 2d index on loc");
-			coll.ensureIndex({zipcode: 1});
+			collection.ensureIndex({zipcode: 1}, function(err, result) {});
 			console.log("Created index on zipcode");
 		})
 		.on('error', function(error) {

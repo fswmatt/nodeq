@@ -18,11 +18,11 @@ var request = require('request')
 	, events = require('events')
 	, _ = require('underscore')
 	, dbHelper = require('../scripts/dbHelper')
-	, keys = require('../scripts/config/keys')
+	, keys = require('../config/keys')
+	, globals = require('../config/globals')
 	, venueHelper = require('../scripts/venueHelper')
 	, returnJsonHelper = require('../scripts/returnJsonHelper')
 	, flowController = require('../scripts/flowController')
-	, globals = require('./config/globals')
 	;
 
 

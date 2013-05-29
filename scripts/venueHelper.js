@@ -9,8 +9,8 @@ var request = require('request')
 	, _ = require('underscore')
 	, dbHelper = require('../scripts/dbHelper')
 	, flowController = require('../scripts/flowController')
-	, keys = require('../scripts/config/keys')
-	, globals = require('./config/globals')
+	, keys = require('../config/keys')
+	, globals = require('../config/globals')
 	;
 
 

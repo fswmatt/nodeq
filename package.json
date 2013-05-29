@@ -14,5 +14,6 @@
 		, "underscore": "1.4.4"
 		, "csv": "0.3.0"
 		, "express-device": "0.3.6"
+		, "config": "0.4.24"
 	}
 }
