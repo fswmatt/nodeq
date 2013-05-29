@@ -10,7 +10,6 @@
 var request = require('request')
 	, xml2js = require('xml2js')
 	, util = require('util')
-	, mongo = require('mongodb')
 	, events = require('events')
 	, _ = require('underscore')
 	, dbHelper = require('../scripts/dbHelper')

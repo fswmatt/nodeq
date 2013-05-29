@@ -7,7 +7,6 @@ var express = require('express')
 	, path = require('path')
 	, api = require('./routes/api')
 	, test = require('./tests/test')
-	, convert = require('./zipdata/convertLatLng')
 	, app = express();
 
 // all environments
@@ -39,7 +38,6 @@ app.get('/api/v0.2/getShowList/:north/:west/:south/:east', api.showListFromLatLn
 app.get('/api/v0.2/getVenueInfo/:venueId', api.getVenueInfo);
 
 app.get('/test', test.test);
-app.get('/convert', convert.run);
 
 http.createServer(app).listen(app.get('port'), function(){
   console.log('Express server listening on port ' + app.get('port'));
