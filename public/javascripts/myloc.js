@@ -106,6 +106,10 @@ function initCitySelector() {
 	var theSelect = document.getElementById("citySelector");
 	// TODO: add the options from cityList
 	theSelect.onchange = cityChanged;
+
+	// just for now...
+	newCity = cityList["PDX"];
+	$("#left-col").accordion();
 }
 
 
@@ -188,7 +192,9 @@ function updateBoundsDisplay(forceIt) {
 			return;
 		}
 	}
-	div.innerHTML = "Updating map...";
+//	div.innerHTML = "Updating map...";
+	$("#left-col").accordion("destroy").empty();
+	$("#mapinfo").text("Updating map...");
 
 	// caching?
 	var foundIt = false;
@@ -246,7 +252,8 @@ function updateBoundsDisplay(forceIt) {
 
 		complete: function( xhr, status ) {
 			console.log("Bounds: " + JSON.stringify(bounds) + " request completed.");
-			div.innerHTML = "Map updated.";
+//			div.innerHTML = "Map updated.";
+			$("#mapinfo").text("Map updated.");
 		}
 	});
 }
@@ -317,6 +324,7 @@ function updateDisplay(data) {
 	});
 	markers = savedMarkers;
 
+	var listStr = "";
 	data.results.shows.forEach(function(show) {
 		if ( null != show && null != show.venue && null != show.artists
 				&& null != show.artists[0]
@@ -336,7 +344,21 @@ function updateDisplay(data) {
 				, "concert");
 			markers.push(markerObj);
 		}
+		// add info for ALL the shows to the side list
+		listStr += "<h3>" + show.venue.name + "</h3><p>";
+		show.artists.forEach(function(artist) {
+			listStr += artist.name + "</br>";
+		});
+		if ( show.venue.phone ) {
+			listStr += show.venue.phone + "</br>";
+		}
+		if ( show.venue.website ) {
+			listStr += "<a href='http://" + show.venue.website + "'>" + show.venue.website + "</a></br>";
+		}
+		listStr += "</p>"
 	});
+
+	$("#left-col").append(listStr).accordion({ heightStyle: "content" });
 }
 
 

@@ -13,6 +13,7 @@ exports.DB_CONN_FLAGS = CONFIG.DB_CONN_FLAGS;
 exports.DB_PORT = CONFIG.DB_PORT;
 exports.DB_HOST = CONFIG.DB_HOST;
 exports.DB_URL = process.env.MONGOLAB_URI ? process.env.MONGOLAB_URI : CONFIG.DB_URL;
+console.log("DB_URL: " + this.DB_URL);
 
 //exports.DB_HOST = 'mini-me.local';
 //exports.DB_URL = "mongodb://localhost:27017/mdb"

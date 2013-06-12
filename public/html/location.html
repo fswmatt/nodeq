@@ -4,19 +4,21 @@
 <head>
 	<meta charset="utf-8">
 	<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" />
-<!--    <link rel="stylesheet" type="text/css" href="../stylesheets/myloc.css" /> -->
+    <link rel="stylesheet" type="text/css" href="../stylesheets/style.css" />
 	<title>Cool Stuff Around Me</title>
 	<script src="http://maps.google.com/maps/api/js?sensor=true"></script>
 	<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
 	<script src="http://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>
 	<script src="../javascripts/myloc.js"></script>
 	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
-	<style>html, body, #map-canvas {margin: 10; padding: 10; height: 90%;}</style>
+<style>
+</style>
 
 </head>
 
 <body>
-	<div id="location">
+  <div id="container">
+	<div id="top-nav">
 		City: <select id="citySelector" title="What City You Looking For?" >
 		  <option value="CUR" selected="true">Current Location</option>
 		  <option value="BOS">Boston</option>
@@ -34,12 +36,18 @@
 		</select>
 		Date: <input type="text" id="datepicker" title="When You Looking?" size="10"/>
 	</div>
-	<div id="map-canvas">
-		Map will go here
+	<div id="content">
+		<div id="left-col">
+			left columns will go here
+		</div>
+		<div id="map-canvas">
+			Map will go here
+		</div>
 	</div>
 	<div id="mapinfo">
 		Map info will go here
 	</div>
+  </div>
 </body>
 
 </html>
