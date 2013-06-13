@@ -152,12 +152,11 @@ function addMarker(map, latLng, title, content, id, type) {
 	var infoWindow = new google.maps.InfoWindow( { content: content
 		, position: latLng
 	});
-	var listener = google.maps.event.addListener(marker, "click", function() {
-		if ( null != openInfoWindow ) {
-			openInfoWindow.close(map);
-		}
+	var listener = google.maps.event.addListener(marker, "click", function(event) {
+		closeInfoWindow();
 		infoWindow.open(map);
 		openInfoWindow = infoWindow;
+		openAccordionToId(id);
 	});
 	var markerObj = { id: id
 		, marker: marker
@@ -166,6 +165,24 @@ function addMarker(map, latLng, title, content, id, type) {
 	};
 	console.log("Adding marker for " + title);
 	return markerObj;
+}
+
+
+var markerJustClicked = false;
+// opens the accordion to this id
+function openAccordionToId(id) {
+	var index = -1;
+	markers.some(function(elem, i) {
+		if ( elem.id == id ) {
+			index = i;
+			return true;
+		}
+		return false;
+	});
+	if ( index > -1 ) {
+		markerJustClicked = true;
+		$("#left-col").accordion({active: index});
+	}
 }
 
 
@@ -324,6 +341,16 @@ function updateDisplay(data) {
 	});
 	markers = savedMarkers;
 
+	var lat = map.getCenter().lat();
+	var lng = map.getCenter().lng();
+	data.results.shows.sort(function(a, b) {
+		var aDistSquared = Math.pow(a.venue.location.lat - lat, 2) +
+				Math.pow(a.venue.location.lng - lng, 2);
+		var bDistSquared = Math.pow(b.venue.location.lat - lat, 2) +
+				Math.pow(b.venue.location.lng - lng, 2);
+		return aDistSquared - bDistSquared;
+	});
+
 	var listStr = "";
 	data.results.shows.forEach(function(show) {
 		if ( null != show && null != show.venue && null != show.artists
@@ -344,21 +371,53 @@ function updateDisplay(data) {
 				, "concert");
 			markers.push(markerObj);
 		}
-		// add info for ALL the shows to the side list
-		listStr += "<h3>" + show.venue.name + "</h3><p>";
-		show.artists.forEach(function(artist) {
-			listStr += artist.name + "</br>";
-		});
-		if ( show.venue.phone ) {
-			listStr += show.venue.phone + "</br>";
+		if ( null != show ) {
+			// add info for ALL the shows to the side list
+			listStr += "<h3 id=" + show.venue.googleid + ">" + show.venue.name + "</h3><p>";
+			show.artists.forEach(function(artist) {
+				listStr += artist.name + "</br>";
+			});
+			if ( show.venue.phone ) {
+				listStr += show.venue.phone + "</br>";
+			}
+			if ( show.venue.website ) {
+				listStr += "<a href='http://" + show.venue.website + "'>" + show.venue.website + "</a></br>";
+			}
+			listStr += "</p>"
 		}
-		if ( show.venue.website ) {
-			listStr += "<a href='http://" + show.venue.website + "'>" + show.venue.website + "</a></br>";
-		}
-		listStr += "</p>"
 	});
 
-	$("#left-col").append(listStr).accordion({ heightStyle: "content" });
+	$("#left-col").append(listStr).accordion({ heightStyle: "content"
+		, collapsible: true
+		, activate: onAccordionActivate
+		, create: onAccordionCreate
+	});
+}
+
+
+// accordion functions
+function onAccordionActivate(e, ui) {
+	var newId = ui.newHeader[0].id;
+	showMarkerForId(newId);
+}
+
+
+function onAccordionCreate(e, ui) {
+	var newId = ui.header[0].id;
+	showMarkerForId(newId);
+}
+
+
+function showMarkerForId(id) {
+	if ( ! markerJustClicked ) {
+		closeInfoWindow();
+		var marker = _.findWhere(markers, {id: id});
+		if ( marker ) {
+			marker.info.open(map);
+			openInfoWindow = marker.info;
+		}
+	}
+	markerJustClicked = false;
 }
 
 
