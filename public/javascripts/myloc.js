@@ -7,6 +7,7 @@
 // global map
 var map;
 var markers = new Array();
+var accordion = null;
 
 
 // use local cache?
@@ -109,7 +110,7 @@ function initCitySelector() {
 
 	// just for now...
 	newCity = cityList["PDX"];
-	$("#left-col").accordion();
+	// accordion = $("#left-col").accordion();
 }
 
 
@@ -181,7 +182,9 @@ function openAccordionToId(id) {
 	});
 	if ( index > -1 ) {
 		markerJustClicked = true;
-		$("#left-col").accordion({active: index});
+		if ( null != accordion ) {
+			$("#left-col").accordion({active: index});
+		}
 	}
 }
 
@@ -204,13 +207,14 @@ function updateBoundsDisplay(forceIt) {
 		if ( isRectInsideRect(dataBounds, bounds) ) {
 			// zoomed in or moved inside the old last bounds.  don't need to refresh
 			div.innerHTML = "No update needed.";
-			console.log("No refresh needed.  Max bounds " + JSON.stringify(dataBounds)
-					+ ", current: " + JSON.stringify(bounds));
 			return;
 		}
 	}
-//	div.innerHTML = "Updating map...";
-	$("#left-col").accordion("destroy").empty();
+	if ( accordion ) {
+		// disable accordion while we're updating
+		$("#left-col").accordion("disable");
+//		map({disableDefaultUI: true});
+	}
 	$("#mapinfo").text("Updating map...");
 
 	// caching?
@@ -224,9 +228,9 @@ function updateBoundsDisplay(forceIt) {
 					&& ( 0 == dateDelta )
 					) {
 				// it's in the cache.  just return it
-				updateDisplay(elem);
 				div.innerHTML = "Map in cache.";
 				console.log("Bounds " + JSON.stringify(bounds) + " in local cache.");
+				updateDisplay(elem);
 				return true;
 			}
 		});
@@ -241,7 +245,7 @@ function updateBoundsDisplay(forceIt) {
 	//	http://localhost:8000/api/v0.1/getShowList/45.58/-122.6/45.50/-122.67
 
 	var url;
-	if ( null != newCity ) {
+	if ( newCity ) {
 		url = "/api/v0.2/getShowList/" + newCity.zip + "/" + newCity.radius
 				+ "?city=" + newCity.symbol;
 		newCity = null;
@@ -269,7 +273,6 @@ function updateBoundsDisplay(forceIt) {
 
 		complete: function( xhr, status ) {
 			console.log("Bounds: " + JSON.stringify(bounds) + " request completed.");
-//			div.innerHTML = "Map updated.";
 			$("#mapinfo").text("Map updated.");
 		}
 	});
@@ -308,7 +311,6 @@ function cacheAndUpdate(data) {
 		}
 		// and reset the bounds
 	}
-	dataBounds = data.results.dataBounds;
 	updateDisplay(data);
 }
 
@@ -324,6 +326,12 @@ function clearAllMarkers() {
 
 
 function updateDisplay(data) {
+	dataBounds = data.results.dataBounds;
+	if ( accordion ) {
+		$("#left-col").accordion("destroy").empty();
+		accordion = null;
+	}
+
 	// loop through the markers and remove the ones we don't need
 	var savedMarkers = new Array();
 	var markerIds = new Array();
@@ -387,24 +395,29 @@ function updateDisplay(data) {
 		}
 	});
 
-	$("#left-col").append(listStr).accordion({ heightStyle: "content"
+	accordion = $("#left-col").append(listStr).accordion({ heightStyle: "content"
 		, collapsible: true
 		, activate: onAccordionActivate
 		, create: onAccordionCreate
 	});
+//	map({disableDefaultUI: false});
 }
 
 
 // accordion functions
 function onAccordionActivate(e, ui) {
-	var newId = ui.newHeader[0].id;
-	showMarkerForId(newId);
+	if ( ui.newHeader && ui.newHeader[0] ) {
+		var newId = ui.newHeader[0].id;
+		showMarkerForId(newId);
+	}
 }
 
 
 function onAccordionCreate(e, ui) {
-	var newId = ui.header[0].id;
-	showMarkerForId(newId);
+	if ( ui.header && ui.header[0] ) {
+		var newId = ui.header[0].id;
+		showMarkerForId(newId);
+	}
 }
 
 

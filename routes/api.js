@@ -129,12 +129,37 @@ function showsFromParams(params) {
 		, [songkick.processVenues]
 		, [songkick.generateShortShows, pollstar.generateShortShows, jambase.generateShortShows]
 		, [mergeAllShows]
+		, [removeShowsOutsideBounds]
 		, [writeOutput]
 	];
 	new flowController.FlowController({ model: model
 		, callbacks: callbacks
 		, startNow: true
 	});
+}
+
+
+// clean out any shows outside the bounds requested.
+//	yeah, sometimes our data sucks.
+function removeShowsOutsideBounds(model) {
+	if ( null != model.data ) {
+		var goodShows = new Array();
+		model.data.shows.forEach(function(show) {
+			if ( show && show.venue && pointInRect(model.data.dataBounds, show.venue.location) ) {
+				goodShows.push(show);
+			}
+		});
+		model.data.shows = goodShows;
+	}
+	model._fc.done();
+}
+
+
+function pointInRect(rect, point) {
+	return ( (rect.north > point.lat)
+			&& (rect.south < point.lat)
+			&& (rect.west > point.lng)
+			&& (rect.east < point.lng) );
 }
 
 
