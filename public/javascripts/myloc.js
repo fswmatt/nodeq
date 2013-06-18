@@ -4,14 +4,16 @@
  *	relies on jquery
  */
 
-// global map
+// globals
+// map
 var map;
 var markers = new Array();
+// left colum
 var accordion = null;
-
-
-// use local cache?
+// internal caching fun
 var useLocalCache = true;
+var dataBounds = null;
+var cache = new Array();
 
 
 window.onload = initMap;
@@ -140,7 +142,6 @@ function dateChanged(dateBox) {
 }
 
 
-var cache = new Array();
 
 // adds a flag to the map
 function addMarker(map, latLng, title, content, id, type) {
@@ -190,7 +191,6 @@ function openAccordionToId(id) {
 
 
 // bounds changed.	update the bounds display
-var dataBounds = null;
 function updateBoundsDisplay(forceIt) {
 	// what's the bounds?
 	var mapBounds = map.getBounds();
@@ -395,7 +395,7 @@ function updateDisplay(data) {
 		}
 	});
 
-	accordion = $("#left-col").append(listStr).accordion({ heightStyle: "content"
+	accordion = $("#left-col").html(listStr).accordion({ heightStyle: "content"
 		, collapsible: true
 		, activate: onAccordionActivate
 		, create: onAccordionCreate
