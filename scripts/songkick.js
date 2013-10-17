@@ -24,6 +24,7 @@ var LOCALE_TO_SK = { BOS: "18842-us-boston-cambridge"
 	, MIA: "9776-us-miami"
 	, NO: "11772-us-new-orleans"
 	, CHI: "9426-us-chicago"
+	, DEN: "6404-us-denver"
 	, LAS: "8396-us-las-vegas"
 	, SEA: "2846-us-seattle"
 	, PDX: "12283-us-portland"
@@ -50,7 +51,6 @@ exports.load = function(model) {
 // TODO: multi-page.  probably by spawning off more of these pups in parallel
 	var uri = "http://www.songkick.com/metro_areas/" + u;
 	console.log("Getting songkick show list from " + uri);
-	model["songkickShows"] = new Array();
 	request({uri: uri, timeout: globals.PRIMARY_TIMEOUT}, function(err, response, body) {
 		// error check
 		if ( null != err || response == null || response.statusCode !== 200 ) {
@@ -59,68 +59,73 @@ exports.load = function(model) {
 			return;
 		}
 
-		// jsdom's our own dom, and tell it to use jquery
-		jsdom.env({ html: body
-				, scripts: [globals.JQUERY_LOC] }
-				, function(err, window) {
-			//Use jQuery just as in a regular HTML page
-			var $ = window.jQuery;
-			var $body = $('body');
-			var $events = $body.find('#event-listings .event-listings li');
-			 // for each event...
-			var date;
-			var addVenues = true;
-			$events.each(function (i, item) {
-				if ( 1 == $(item).children('h3').length ) {
-					date = new Date($(item).text().trim());
-					addVenues = ( (date >= startDate) && (date <= endDate) );
-				} else if (addVenues) {
-					var venueName, venueLocation, venueId;
-					var artistArray = new Array();
-					$(item).children().each(function(index) {
-						if ( 1 == index ) {
-							var artists = $(this).text().trim();
-							var splits = artists.split(SPLIT_REGEX);
-							splits.forEach(function(artist) {
-								artist = artist.trim();
-								if ( 0 < artist.length ) {
-									artistArray.push(artist);
-								}
-							});
-						} else if ( 2 == index ) {
-						// TODO: clean this up, use the tool properly
-							locationName = $(this).text().trim();
-							$(this).find('p').children().each(function(x) {
-								if ( 0 == x ) {
-									venueName = $(this).text().trim();
-									var venueStr = $(this).html().trim();
-									var cp = venueStr.indexOf(VENUE_SEARCH);
-									var str2 = venueStr.substr(cp + VENUE_SEARCH.length, 15);
-									venueId = str2.substr(0, str2.indexOf('-'));
-								} else if ( 1 == x ) {
-									venueLocation = $(this).text().trim();
-								}
+		try {
+			// jsdom's our own dom, and tell it to use jquery
+			jsdom.env({ html: body
+					, scripts: [globals.JQUERY_LOC] }
+					, function(err, window) {
+				model["songkickShows"] = new Array();
+				//Use jQuery just as in a regular HTML page
+				var $ = window.jQuery;
+				var $body = $('body');
+				var $events = $body.find('#event-listings .event-listings li');
+				 // for each event...
+				var date;
+				var addVenues = true;
+				$events.each(function (i, item) {
+					if ( 1 == $(item).children('h3').length ) {
+						date = new Date($(item).text().trim());
+						addVenues = ( (date >= startDate) && (date <= endDate) );
+					} else if (addVenues) {
+						var venueName, venueLocation, venueId;
+						var artistArray = new Array();
+						$(item).children().each(function(index) {
+							if ( 1 == index ) {
+								var artists = $(this).text().trim();
+								var splits = artists.split(SPLIT_REGEX);
+								splits.forEach(function(artist) {
+									artist = artist.trim();
+									if ( 0 < artist.length ) {
+										artistArray.push(artist);
+									}
+								});
+							} else if ( 2 == index ) {
+							// TODO: clean this up, use the tool properly
+								locationName = $(this).text().trim();
+								$(this).find('p').children().each(function(x) {
+									if ( 0 == x ) {
+										venueName = $(this).text().trim();
+										var venueStr = $(this).html().trim();
+										var cp = venueStr.indexOf(VENUE_SEARCH);
+										var str2 = venueStr.substr(cp + VENUE_SEARCH.length, 15);
+										venueId = str2.substr(0, str2.indexOf('-'));
+									} else if ( 1 == x ) {
+										venueLocation = $(this).text().trim();
+									}
+								});
+							}
+						});
+						// only good venues please
+						if ( null != venueLocation && null != venueId ) {
+							model.songkickShows.push({ artists: artistArray
+								, venueName: venueName
+								, venueLocation: venueLocation
+								, venueId: venueId
+								, date: date
 							});
 						}
-					});
-					// only good venues please
-					if ( null != venueLocation && null != venueId ) {
-						model.songkickShows.push({ artists: artistArray
-							, venueName: venueName
-							, venueLocation: venueLocation
-							, venueId: venueId
-							, date: date
-						});
 					}
-				}
+				});
+			// remove any dupes
+			var newArray = _.uniq(model.songkickShows, false, function(elem, a, b) {
+				return elem.venueId;
 			});
-		// remove any dupes
-		var newArray = _.uniq(model.songkickShows, false, function(elem, a, b) {
-			return elem.venueId;
-		});
-		model["songkickShows"] = newArray;
-		model._fc.done();
-		});
+			model["songkickShows"] = newArray;
+			model._fc.done();
+			});
+		} catch ( err ) {
+			console.log(err.stack);
+		}
 	});
 }
 

@@ -19,16 +19,17 @@ var cache = new Array();
 window.onload = initMap;
 
 function initMap() {
+	$("#datepicker")
+		.datepicker()
+		.change(dateChanged)
+		.val(new Date().toLocaleDateString())
+		;
+	initCitySelector();
 	if ( navigator.geolocation ) {
-		$("#datepicker")
-			.datepicker()
-			.change(dateChanged)
-			.val(new Date().toLocaleDateString())
-			;
-		initCitySelector();
 		navigator.geolocation.getCurrentPosition(createMap, locationError);
 	} else {
-		alert ("No location support");
+//		alert ("No location support");
+		createMap();
 	}
 }
 
@@ -49,8 +50,10 @@ function detectBrowser() {
 
 // show the location
 function createMap(position) {
-	var gLatLng = new google.maps.LatLng(position.coords.latitude,
-				position.coords.longitude);
+	var gLatLng = position ?
+			new google.maps.LatLng(position.coords.latitude,
+				position.coords.longitude)
+			: new google.maps.LatLng(45.523, -122.644);
 	// make a map
 	map = new google.maps.Map(document.getElementById("map-canvas"), {
 		zoom: 14,
@@ -59,8 +62,10 @@ function createMap(position) {
 	});
 
 	// add "You Are Here" marker
-	var title = "You Are Here";
-	addMarker(map, gLatLng, title, "That's you!", "1", "here");
+	if ( position ) {
+		var title = "You Are Here";
+		addMarker(map, gLatLng, title, "That's you!", "1", "here");
+	}
 
 	// add listeners for bounds events
 	google.maps.event.addListener(map, "idle", updateBoundsDisplay);
@@ -91,6 +96,8 @@ cityList["NO"] = {name: "New Orleans", symbol: "NO", zip:70116
 		, radius: 25, zoom:12, lat: 29.9654, lng: -90.063};
 cityList["CHI"] = {name: "Chicago", symbol: "CHI", zip:60624
 		, radius: 25, zoom:12, lat: 41.9072, lng: -87.66178};
+cityList["DEN"] = {name: "Denver", symbol: "DEN", zip:80205
+		, radius: 25, zoom:12, lat: 39.7392, lng: -104.9847};
 cityList["LAS"] = {name: "Las Vegas", symbol: "LAS", zip:89107
 		, radius: 25, zoom:12, lat: 36.13133, lng: -115.197};
 cityList["SEA"] = {name: "Seattle", symbol: "SEA", zip:98122
@@ -111,7 +118,7 @@ function initCitySelector() {
 	theSelect.onchange = cityChanged;
 
 	// just for now...
-	newCity = cityList["PDX"];
+	// newCity = cityList["PDX"];
 	// accordion = $("#left-col").accordion();
 }
 
@@ -447,7 +454,8 @@ function locationError(error) {
 	}
 	var div = document.getElementById("mapinfo");
 	div.innerHTML = "Error getting current location.  Error: " + errorMsg;
-	log.console("Location error: " + errorMsg);
+	console.log("Location error: " + errorMsg);
+	createMap();
 }
 
 
